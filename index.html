@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>양판소설 찍어내보자 v.1</title>
+    <title>양판소설 출판소 v.1</title>
     
     <!-- 홈 화면 앱 기능 추가 -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -61,7 +61,7 @@
     <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl">
         <input type="file" id="file-loader" class="hidden" accept=".txt">
         <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">소설 짜깁기 v.1</h1>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">양판소설 출판소 v.1</h1>
             <p class="text-lg text-gray-600 mt-2">designed by 유성열</p>
         </header>
 
@@ -134,6 +134,12 @@
                 <p id="summary-status" class="text-center text-sm text-sky-600 mb-4 hidden"></p>
                 <div id="story-log" class="min-h-[150px] bg-gray-50 p-4 rounded-md border mb-6 space-y-2 text-gray-700"></div>
 
+                <div class="text-center my-6">
+                    <button id="expand-story-button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg">
+                        스토리 부풀리기
+                    </button>
+                </div>
+
                 <div class="border-y py-6 mb-6">
                      <h3 class="text-lg font-semibold mb-3 text-center text-gray-700">다음 이야기 연출하기</h3>
                      <p class="text-center text-gray-500 mb-4">다음 장면에 대한 키워드나 요구사항을 입력하면 AI가 반영합니다. (선택사항)</p>
@@ -170,9 +176,6 @@
                     </button>
                      <button id="summarize-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg">
                         현재까지 내용 요약하기
-                    </button>
-                    <button id="expand-story-button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg">
-                        스토리 부풀리기
                     </button>
                 </div>
             </div>
@@ -717,7 +720,7 @@
         function autoSave(isInitialSave = false) {
             if (!currentFilename) return;
 
-            let fullText = "소설 짜깁기 v.1 - 줄거리\ndesigned by 유성열\n\n================================\n\n";
+            let fullText = "양판소설 출판소 v.1 - 줄거리\ndesigned by 유성열\n\n================================\n\n";
             fullText += `[전체 줄거리]\n${fullPlot || "- 전체 줄거리가 아직 정해지지 않았습니다. -"}\n\n================================\n\n`;
             if (storySummary) { fullText += `[AI용 내용 요약본]\n${storySummary}\n\n================================\n\n`; }
             storyLog.forEach((entry, index) => {
