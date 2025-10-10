@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,11 +54,12 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
     <!-- Chosen Palette: Slate Gray & Sky Blue -->
-    <!-- Application Structure Plan: The app evolves into a tabbed SPA. A navigation bar is added to switch between the 'story-screen' (creator view) and a new 'archive-screen' (reader view). The core logic is managed by a `showView` function that toggles the visibility of these main sections. This provides an in-app method for reviewing the entire narrative without breaking the creative flow, fulfilling a key user request for better content management and review capabilities. -->
-    <!-- Visualization & Content Choices: A new main navigation element with two buttons ("스토리 제작", "기록 보관소") is added. A new main view, 'archive-screen', is created to display the full plot and detailed logs in a read-only format. A `populateArchive` function dynamically renders the current story state into this view whenever it's accessed, ensuring the displayed information is always up-to-date. This transforms the tool from a pure generator into a lightweight writer's environment. -->
+    <!-- Application Structure Plan: A 'Load from File' feature is added. The initial screen now has a 'Load' button which triggers a hidden file input. A FileReader reads the .txt file, and a robust parsing function using regular expressions extracts the full plot, summary, and all story logs (both summary and expanded versions). The application state is then fully restored, and the user is transitioned directly to the story creation view, ready to continue where they left off. -->
+    <!-- Visualization & Content Choices: A new "기존작업 불러오기" button is added to the setup screen. The core of this feature is the `parseAndLoadState` JavaScript function, which uses regex to reliably parse the structured .txt file. This approach is superior to simple splitting as it correctly handles missing sections (like summary or expanded text for some chapters). The user experience is seamless: click, select file, and the app is instantly restored. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 
     <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <input type="file" id="file-loader" class="hidden" accept=".txt">
         <header class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-bold text-gray-900">소설 짜깁기 v.1</h1>
             <p class="text-lg text-gray-600 mt-2">designed by 유성열</p>
@@ -76,8 +79,20 @@
 
         <!-- 초기 설정 화면 -->
         <main id="setup-screen">
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-bold mb-6 text-center border-b pb-4">초기 설정 (다중 선택 가능)</h2>
+             <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="text-center mb-8">
+                    <button id="load-button" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl w-full max-w-xs mx-auto">
+                        기존작업 불러오기
+                    </button>
+                </div>
+                <div class="flex items-center text-center my-6">
+                    <hr class="flex-grow border-gray-300">
+                    <span class="mx-4 text-gray-500 font-semibold">또는</span>
+                    <hr class="flex-grow border-gray-300">
+                </div>
+
+                <h2 class="text-2xl font-bold mb-6 text-center">새로운 스토리 시작하기</h2>
+                <p class="text-center text-gray-500 mb-6 -mt-4">(다중 선택 가능)</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <div>
                         <h3 class="text-xl font-semibold mb-3 text-gray-700">1. 대표 장르</h3>
@@ -175,6 +190,8 @@
         const archiveScreen = document.getElementById('archive-screen');
         const mainNav = document.getElementById('main-nav');
         const startButton = document.getElementById('start-button');
+        const loadButton = document.getElementById('load-button');
+        const fileLoader = document.getElementById('file-loader');
         const storyLogDiv = document.getElementById('story-log');
         const choicesContainer = document.getElementById('choices-container');
         const customInput = document.getElementById('custom-input');
@@ -444,6 +461,88 @@
             const choices = await callGeminiAPI(prompt, { expectJson: true, task: 'choice' });
             displayChoices(choices);
         });
+
+        loadButton.addEventListener('click', () => {
+            fileLoader.click();
+        });
+
+        fileLoader.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) { return; }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const content = event.target.result;
+                    parseAndLoadState(content);
+                } catch (err) {
+                    showAlert('파일을 읽는 도중 오류가 발생했습니다: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Reset file input
+        });
+
+        function parseAndLoadState(content) {
+            // Reset state
+            let tempLog = [];
+            let tempExpanded = {};
+            let tempPlot = "";
+            let tempSummary = "";
+            
+            // Extract Full Plot
+            const plotMatch = content.match(/\[전체 줄거리\]\n([\s\S]*?)\n\n================================/);
+            if (plotMatch && plotMatch[1].trim() !== "- 전체 줄거리가 아직 정해지지 않았습니다. -") {
+                tempPlot = plotMatch[1].trim();
+            }
+
+            // Extract Summary
+            const summaryMatch = content.match(/\[AI용 내용 요약본\]\n([\s\S]*?)\n\n================================/);
+            if (summaryMatch) {
+                tempSummary = summaryMatch[1].trim();
+            }
+
+            // Extract Logs and Expansions
+            const logRegex = /\[(\d+)화 요약\]\n([\s\S]*?)\n\n(?:\[\d+화 상세\]\n([\s\S]*?)\n\n--------------------------------\n\n)?/g;
+            let match;
+            while ((match = logRegex.exec(content)) !== null) {
+                const logIndex = parseInt(match[1], 10) - 1;
+                const logSummary = match[2].trim();
+                const logExpansion = match[3] ? match[3].trim() : null;
+
+                tempLog[logIndex] = logSummary;
+                if (logExpansion) {
+                    tempExpanded[logIndex] = logExpansion;
+                }
+            }
+
+            if (tempLog.length === 0) {
+                showAlert('유효한 스토리 로그를 파일에서 찾을 수 없습니다.');
+                return;
+            }
+
+            // Apply loaded state
+            storyLog = tempLog;
+            expandedStories = tempExpanded;
+            fullPlot = tempPlot;
+            storySummary = tempSummary;
+            
+            // Update UI
+            mainNav.classList.remove('hidden');
+            showView('story-screen');
+            updateStoryLog();
+
+            if (expandedStories[0]) {
+                generateFullPlotButton.classList.remove('hidden');
+            }
+            if (storySummary) {
+                summaryStatus.textContent = "✔ 요약본이 생성되어 AI의 기억력으로 사용됩니다.";
+                summaryStatus.classList.remove('hidden');
+            }
+
+            showAlert('작업을 성공적으로 불러왔습니다!');
+            generateNextChoices();
+        }
         
         customSubmitButton.addEventListener('click', async () => {
             const customText = customInput.value.trim();
@@ -568,5 +667,4 @@
     </script>
 </body>
 </html>
-
 
