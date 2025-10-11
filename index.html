@@ -61,7 +61,7 @@
     <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl">
         <input type="file" id="file-loader" class="hidden" accept=".txt">
         <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">양판소설 출판소 v1.0</h1>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">양판소설 출판소 v.1</h1>
             <p class="text-lg text-gray-600 mt-2">designed by 유성열</p>
         </header>
 
@@ -109,7 +109,7 @@
                         <div id="protagonist-type-options" class="grid grid-cols-3 gap-2"></div>
                     </div>
                     <div>
-                        <h3 class="text-xl font-semibold mb-3 text-gray-700">4. 주인공 초기특성</h3>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-700">4. 주인공 초기 특성</h3>
                         <div id="protagonist-trait-options" class="grid grid-cols-3 gap-2"></div>
                     </div>
                     <div>
@@ -123,7 +123,7 @@
                 </div>
                 <div class="mt-10 text-center">
                     <button id="start-button" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl">
-                        양판소설 찍어내보자
+                        이세계로 출발
                     </button>
                 </div>
             </div>
@@ -147,24 +147,24 @@
 
                 <div class="border-y py-6 mb-6">
                      <h3 class="text-lg font-semibold mb-3 text-center text-gray-700">다음 이야기 연출하기</h3>
-                     <p class="text-center text-gray-500 mb-4">다음 회차에 대한 키워드나 요구사항을 입력하면 AI가 반영합니다. (선택사항)</p>
-                     <textarea id="story-direction-input" class="w-full p-2 border rounded-md" rows="3" placeholder="예: 나는 아무 생각이 없다. 나는 아무 생각이 없기 때문이다.."></textarea>
+                     <p class="text-center text-gray-500 mb-4">다음 장면에 대한 키워드나 요구사항을 입력하면 AI가 반영합니다. (선택사항)</p>
+                     <textarea id="story-direction-input" class="w-full p-2 border rounded-md" rows="3" placeholder="예: 주인공의 숨겨진 능력이 각성하는 계기가 발생함."></textarea>
                 </div>
 
-                <h3 class="text-xl font-semibold mb-4 text-center">다음 회차 이야기를 선택하세요.</h3>
+                <h3 class="text-xl font-semibold mb-4 text-center">다음 이야기를 선택하세요.</h3>
                 <div id="choices-container" class="space-y-4 mb-6"></div>
                 
                 <div class="text-center mb-6">
                     <button id="generate-choices-button" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg shadow-md transition-transform transform hover:scale-105 hidden">
-                        다음 회차 생성하기
+                        다음 이야기 생성하기
                     </button>
                 </div>
 
                 <div class="border-t pt-6">
                      <h3 class="text-lg font-semibold mb-3 text-center text-gray-700">원하는 선택지가 없나요?</h3>
-                     <p class="text-center text-gray-500 mb-4">다음 회차 내용을 직접 입력하여 스토리를 이어가세요.</p>
+                     <p class="text-center text-gray-500 mb-4">다음 로그 내용을 직접 입력하여 스토리를 이어가세요.</p>
                      <div class="flex flex-col gap-2">
-                        <textarea id="custom-input" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" rows="3" placeholder="예: 나는 아무 생각이 없다. 나는 아무 생각이 없기 때문이다.."></textarea>
+                        <textarea id="custom-input" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" rows="3" placeholder="예: 갑자기 하늘에서 검이 떨어진다."></textarea>
                         <button id="custom-submit-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-md transition-colors self-center">
                             적용하기
                         </button>
@@ -224,7 +224,7 @@
         <main id="setting-screen" class="hidden">
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-2xl font-bold mb-4 text-center border-b pb-4">세계관 설정</h2>
-                <p class="text-center text-gray-500 mb-6">AI가 반드시 따라야 할 핵심 규칙, 설정, 문체 등을 입력하세요. 이 내용은 작업에 최우선으로 반영됩니다.</p>
+                <p class="text-center text-gray-500 mb-6">AI가 반드시 따라야 할 핵심 규칙, 설정, 문체 등을 자유롭게 입력하세요. 이 내용은 모든 AI 작업에 최우선으로 반영됩니다.</p>
                 <textarea id="world-setting-input" class="w-full p-4 border rounded-md" rows="15" placeholder="예시)&#10;- 빨간 포션: 1레벨 이상 사용 가능. 체력 50 회복.&#10;- 하얀 포션: 50레벨 이상 사용 가능. 모든 상태이상 해제.&#10;- 이 세계의 모든 드래곤은 인간에게 적대적이다.&#10;- 문체는 간결하고 건조하게 유지해주세요."></textarea>
                 <div class="mt-6 text-center">
                     <button id="save-setting-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md">
@@ -268,7 +268,7 @@
         
         const setupOptions = {
             'main-genre': { elementId: 'main-genre-options', options: ['판타지', '무협', '현대판타지', '로맨스 판타지', 'SF', '게임', '아포칼립스', '대체역사', '사용자 지정'] },
-            'sub-genre': { elementId: 'sub-genre-options', options: ['아카데미물', '책빙의물', '성좌물', '탑등반물', '헌터물', '영지물', '전문가물', '생존물', '사용자 지정'] },
+            'sub-genre': { elementId: 'sub-genre-options', options: ['정통', '퓨전', '아카데미물', '성좌물', '탑등반물', '헌터물', '영지물', '생존물', '사용자 지정'] },
             'protagonist-type': { elementId: 'protagonist-type-options', options: ['회귀자', '환생자', '빙의자', '시한부', '고인물', '악역/빌런', '망나니', '낙오자/F급', '사용자 지정'] },
             'protagonist-trait': { elementId: 'protagonist-trait-options', options: ['상태창', '압도적 재능', '미래/공략 지식', '천재적 두뇌', '노력파', '가문/금수저', '흙수저/밑바닥', '특이 체질', '사용자 지정'] },
             'world-bg': { elementId: 'world-bg-options', options: ['중세 판타지', '동양풍/무림', '현대 지구', '포스트 아포칼립스', '가상현실 게임', '우주/SF', '마법과 과학 공존', '고대/신화', '사용자 지정'] },
@@ -638,7 +638,7 @@
             const content = `
                 <h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 한 줄 요약</h3>
                 <p class="text-center text-gray-600 mb-4">이 화의 핵심 내용이나 메시지를 기록하세요.</p>
-                <input id="log-note-input" type="text" class="w-full p-2 border rounded-md mb-6" value="${currentNote}" placeholder="">
+                <input id="log-note-input" type="text" class="w-full p-2 border rounded-md mb-6" value="${currentNote}" placeholder="예: 주인공의 각성을 암시하는 복선 등장">
                 <div class="flex justify-center gap-4">
                     <button onclick="saveLogNote(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">저장</button>
                     <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
@@ -1152,7 +1152,7 @@
             const prompt = `${worldSettingInstruction}${context}\n\n[요청]: 위 스토리 내용에서 중요해 보이지만 아직 등록되지 않은 캐릭터를 최대 3명 찾아내 프로필을 생성해줘.`;
 
             const generatedChars = await callGeminiAPI(prompt, { expectJson: true, task: 'character_generation'});
-
+            closeModal();
             if (!generatedChars || generatedChars.length === 0) {
                 showAlert("스토리에서 자동으로 생성할 만한 새 캐릭터를 찾지 못했습니다.");
                 return;
@@ -1351,6 +1351,4 @@
     </script>
 </body>
 </html>
-
-
 
