@@ -938,8 +938,8 @@
                 const plot = await callGeminiAPI(prompt, { task: 'plot_generation'});
                 showAIPlotWithEditOption(plot);
             } catch (error) {
-                showAlert(`오류 발생: ${error.message}`);
-            } 
+                 showAlert(`오류 발생: ${error.message}`);
+            }
         }
 
         function showAIPlotWithEditOption(plotText) {
@@ -1172,7 +1172,7 @@
             } catch (error) {
                  showAlert(`오류 발생: ${error.message}`);
             } finally {
-                if(tempAICharacters.length === 0) closeModal();
+                if(!tempAICharacters || tempAICharacters.length === 0) closeModal();
             }
         }
 
