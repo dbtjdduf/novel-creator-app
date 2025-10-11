@@ -200,7 +200,7 @@
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <div class="flex justify-between items-center border-b pb-4 mb-6">
                     <h2 class="text-2xl font-bold">캐릭터 요약</h2>
-                    <button id="add-character-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    <button id="add-character-choice-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
                         새 캐릭터 추가
                     </button>
                 </div>
@@ -230,7 +230,7 @@
         const generateFullPlotButton = document.getElementById('generate-full-plot-button');
         const generateChoicesButton = document.getElementById('generate-choices-button');
         const storyDirectionInput = document.getElementById('story-direction-input');
-        const addCharacterButton = document.getElementById('add-character-button');
+        const addCharacterChoiceButton = document.getElementById('add-character-choice-button');
         const characterListDiv = document.getElementById('character-list');
         const loader = document.getElementById('loader');
         const modal = document.getElementById('modal');
@@ -254,6 +254,7 @@
         let fullPlot = "";
         let logNotes = {};
         let characters = [];
+        let tempAICharacters = [];
         let currentFilename = "";
 
         function showView(viewId) {
@@ -354,7 +355,8 @@
                 choice: `당신은 개연성을 중시하는 웹소설 작가입니다. 주어진 이야기의 '바로 다음'에 일어날 법한, 가장 자연스러운 사건 선택지 3개를 제안해야 합니다. 절대로 갑작스럽게 스토리를 비약시키지 마세요. 예를 들어, 이제 막 환생한 어린 주인공에게 갑자기 세계를 구하거나 엄청난 명성을 얻는 선택지를 주면 안 됩니다. 주인공의 현재 상황과 능력에 맞는, 점진적이고 현실적인 성장의 과정을 그릴 수 있는 선택지를 제시해야 합니다. 사용자의 연출 방향이 주어지면 그 내용을 최우선으로 반영하되, 개연성을 해치지 않는 선에서 적용해야 합니다. 전체 줄거리가 주어진 경우, 그 흐름을 따르되 반드시 단계적인 전개를 거쳐야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다. 예: ["선택지 1", "선택지 2", "선택지 3"]`,
                 expansion: `당신은 뛰어난 웹소설 작가입니다. 주어진 이야기의 맥락과 사용자의 연출 요구사항을 파악하여, 한 편의 완성도 높은 장면으로 만들어주세요. 장면을 묘사할 때, 등장인물의 심리를 보여주는 '독백', 관계와 스토리를 진전시키는 '캐릭터 간의 대화'를 적극적으로 추가해주세요. 필요하다면 '쿵!', '스르륵' 같은 '의성어/의태어'를 사용하여 생동감을 더해주세요. 특히 대화의 비중을 높여 이야기가 지루하지 않게 만들어야 합니다.`,
                 summary: `당신은 웹소설 전문 편집자입니다. 주어진 줄거리 전체를 분석하여, 핵심 설정, 주요 등장인물, 그리고 지금까지 일어난 핵심 사건들을 간결하게 요약해주세요. 이 요약본은 AI가 앞으로의 이야기를 쓸 때 참고할 자료이므로, 맥락을 이해하는 데 중요한 정보는 빠뜨리지 마세요.`,
-                plot_generation: `당신은 유능한 웹소설 기획자입니다. 주어진 소설의 상세한 1화 내용을 바탕으로, 앞으로 펼쳐질 이야기의 전체 줄거리(시놉시스)를 작성해주세요. 기승전결(도입, 전개, 위기, 절정, 결말) 구조에 따라 핵심 사건들을 순서대로 나열하여 흥미로운 이야기의 뼈대를 만들어주세요.`
+                plot_generation: `당신은 유능한 웹소설 기획자입니다. 주어진 소설의 상세한 1화 내용을 바탕으로, 앞으로 펼쳐질 이야기의 전체 줄거리(시놉시스)를 작성해주세요. 기승전결(도입, 전개, 위기, 절정, 결말) 구조에 따라 핵심 사건들을 순서대로 나열하여 흥미로운 이야기의 뼈대를 만들어주세요.`,
+                character_generation: `당신은 통찰력 있는 소설 편집자입니다. 주어진 스토리 전체 내용을 분석하여, 아직 프로필이 작성되지 않은 인물 중 비중이 크다고 생각되는 캐릭터를 최대 3명까지 찾아내어 프로필을 작성해주세요. 캐릭터의 작중 행적, 대사, 역할을 기반으로 성격, 외모, 배경 설정을 추론하여 채워야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`
             };
 
             const payload = {
@@ -362,7 +364,28 @@
                 systemInstruction: { parts: [{ text: systemPrompts[task] }] }
             };
 
-            if (expectJson) {
+            if (expectJson && task === 'character_generation') {
+                 payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "profile": {
+                                    type: "OBJECT",
+                                    properties: {
+                                        "이름": { "type": "STRING" },
+                                        "성별/종족": { "type": "STRING" },
+                                        "외모": { "type": "STRING" },
+                                        "설정": { "type": "STRING" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+            } else if (expectJson) {
                 payload.generationConfig = { responseMimeType: "application/json", responseSchema: { type: "ARRAY", items: { type: "STRING" } } };
             }
 
@@ -796,7 +819,7 @@
             fullText += `[전체 줄거리]\n${fullPlot || "- 전체 줄거리가 아직 정해지지 않았습니다. -"}\n\n================================\n\n`;
             if (storySummary) { fullText += `[AI용 내용 요약본]\n${storySummary}\n\n================================\n\n`; }
             if (characters.length > 0) {
-                fullText += `[캐릭터 정보]\n${JSON.stringify(characters)}\n\n================================\n\n`;
+                fullText += `[캐릭터 정보]\n${JSON.stringify(characters, null, 2)}\n\n================================\n\n`;
             }
 
             storyLog.forEach((entry, index) => {
@@ -825,7 +848,80 @@
         }
 
         // --- 캐릭터 관련 함수들 ---
-        addCharacterButton.addEventListener('click', () => showAddCharacterModal());
+        addCharacterChoiceButton.addEventListener('click', () => {
+             const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">새 캐릭터 추가 방식 선택</h3>
+                <p class="text-center text-gray-600 mb-6">어떻게 캐릭터를 추가하시겠습니까?</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="showAddCharacterModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full">사용자 직접 입력</button>
+                    <button onclick="generateCharactersWithAI()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg w-full">AI로 자동 생성</button>
+                </div>
+            `;
+            showModal(content);
+        });
+
+        async function generateCharactersWithAI() {
+            closeModal();
+            const existingNames = characters.map(c => c.profile.이름);
+            let context = `[전체 줄거리]:\n${fullPlot || "아직 없음"}\n\n[최신 로그]:\n${storyLog.slice(-5).join('\n')}\n\n[현재 등록된 캐릭터]: ${existingNames.join(', ')}`;
+
+            const prompt = `${context}\n\n[요청]: 위 스토리 내용에서 중요해 보이지만 아직 등록되지 않은 캐릭터를 최대 3명 찾아내 프로필을 생성해줘.`;
+
+            const generatedChars = await callGeminiAPI(prompt, { expectJson: true, task: 'character_generation'});
+
+            if (!generatedChars || generatedChars.length === 0) {
+                showAlert("스토리에서 자동으로 생성할 만한 새 캐릭터를 찾지 못했습니다.");
+                return;
+            }
+            
+            tempAICharacters = generatedChars;
+            showAICharacterSuggestions(generatedChars);
+        }
+
+        function showAICharacterSuggestions(generatedChars) {
+            let suggestionsHtml = generatedChars.map((char, index) => {
+                return `
+                    <div class="p-4 border rounded-lg bg-gray-50 mb-4">
+                        <h4 class="font-bold text-lg">${char.profile.이름}</h4>
+                        <p class="text-sm"><strong class="font-semibold">성별/종족:</strong> ${char.profile['성별/종족']}</p>
+                        <p class="text-sm"><strong class="font-semibold">외모:</strong> ${char.profile.외모}</p>
+                        <p class="text-sm"><strong class="font-semibold">설정:</strong> ${char.profile.설정}</p>
+                        <div class="text-right mt-2">
+                            <button onclick="addAICharacter(${index})" class="text-sm bg-green-600 text-white px-3 py-1 rounded">이 캐릭터 추가</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+             const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">AI가 생성한 캐릭터 제안</h3>
+                <p class="text-center text-gray-600 mb-6">스토리 내용을 기반으로 AI가 찾은 캐릭터들입니다. 추가하고 싶은 캐릭터를 선택하세요.</p>
+                <div>${suggestionsHtml}</div>
+                <div class="text-center mt-6">
+                    <button onclick="closeModal()" class="bg-gray-500 text-white py-2 px-6 rounded-lg">닫기</button>
+                </div>
+            `;
+            showModal(content);
+        }
+        
+        window.addAICharacter = (index) => {
+            const newChar = tempAICharacters[index];
+            newChar.statusHistory = []; // Initialize status history
+            characters.push(newChar);
+            
+            // Remove from suggestions and rerender modal if others are left
+            tempAICharacters.splice(index, 1);
+            if (tempAICharacters.length > 0) {
+                showAICharacterSuggestions(tempAICharacters);
+            } else {
+                closeModal();
+            }
+            
+            renderCharacterScreen();
+            autoSave();
+            showAlert(`'${newChar.profile.이름}' 캐릭터가 추가되었습니다.`);
+        };
+
 
         function renderCharacterScreen() {
             characterListDiv.innerHTML = '';
@@ -843,7 +939,7 @@
                     profileHtml += `<p class="text-sm"><strong class="font-semibold">${key}:</strong> ${char.profile[key]}</p>`;
                 }
 
-                let historyHtml = char.statusHistory.map((hist, hIndex) => `
+                let historyHtml = (char.statusHistory || []).map((hist, hIndex) => `
                     <div class="mt-2 p-2 border-t">
                         <p class="font-semibold">${hist.chapter} 시점</p>
                         <p class="text-sm whitespace-pre-wrap">${hist.status}</p>
@@ -867,8 +963,9 @@
         }
 
         function showAddCharacterModal() {
+            closeModal(); // Close choice modal first
             const content = `
-                <h3 class="text-xl font-bold mb-4">새 캐릭터 프로필</h3>
+                <h3 class="text-xl font-bold mb-4">새 캐릭터 프로필 (직접 입력)</h3>
                 <div class="space-y-2">
                     <input id="char-name" class="w-full p-2 border rounded" placeholder="이름">
                     <input id="char-gender" class="w-full p-2 border rounded" placeholder="성별 / 종족">
@@ -882,6 +979,37 @@
             `;
             showModal(content);
         }
+        
+        function showEditProfileModal(charIndex) {
+            const char = characters[charIndex];
+            const content = `
+                <h3 class="text-xl font-bold mb-4">캐릭터 프로필 수정</h3>
+                <div class="space-y-2">
+                    <input id="char-name-edit" class="w-full p-2 border rounded" value="${char.profile.이름 || ''}">
+                    <input id="char-gender-edit" class="w-full p-2 border rounded" value="${char.profile['성별/종족'] || ''}">
+                    <input id="char-appearance-edit" class="w-full p-2 border rounded" value="${char.profile.외모 || ''}">
+                    <textarea id="char-setting-edit" class="w-full p-2 border rounded" rows="4">${char.profile.설정 || ''}</textarea>
+                </div>
+                <div class="mt-6 flex justify-center gap-4">
+                    <button onclick="saveCharacterProfile(${charIndex})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">저장</button>
+                    <button onclick="closeModal()" class="bg-gray-500 text-white py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        function saveCharacterProfile(charIndex) {
+             characters[charIndex].profile = {
+                이름: document.getElementById('char-name-edit').value,
+                "성별/종족": document.getElementById('char-gender-edit').value,
+                외모: document.getElementById('char-appearance-edit').value,
+                설정: document.getElementById('char-setting-edit').value,
+            };
+            closeModal();
+            renderCharacterScreen();
+            autoSave();
+        }
+
 
         function addCharacter() {
             const newChar = {
@@ -919,13 +1047,9 @@
                 chapter: document.getElementById('status-chapter').value || `${storyLog.length}화`,
                 status: document.getElementById('status-details').value
             };
+            if(!characters[charIndex].statusHistory) characters[charIndex].statusHistory = [];
             characters[charIndex].statusHistory.push(newStatus);
-            // 시점(chapter) 순으로 정렬
-            characters[charIndex].statusHistory.sort((a, b) => {
-                const numA = parseInt(a.chapter) || 0;
-                const numB = parseInt(b.chapter) || 0;
-                return numA - numB;
-            });
+            characters[charIndex].statusHistory.sort((a, b) => (parseInt(a.chapter) || 0) - (parseInt(b.chapter) || 0));
             closeModal();
             renderCharacterScreen();
             autoSave();
@@ -938,8 +1062,6 @@
                 autoSave();
             }
         }
-
-        // 수정 기능 등은 필요 시 추가 구현 가능
 
         renderSetupOptions();
     </script>
