@@ -61,7 +61,7 @@
     <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl">
         <input type="file" id="file-loader" class="hidden" accept=".txt">
         <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">양판소설 출판소 v.1</h1>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">양판소설 출판소 v1.0</h1>
             <p class="text-lg text-gray-600 mt-2">designed by 유성열</p>
         </header>
 
@@ -72,10 +72,11 @@
             </div>
         </div>
 
-        <nav id="main-nav" class="hidden mb-6 flex justify-center gap-4">
+        <nav id="main-nav" class="hidden mb-6 flex flex-wrap justify-center gap-4">
             <button onclick="showView('story-screen')" class="nav-button active">스토리 제작</button>
             <button onclick="showView('archive-screen')" class="nav-button">기록 보관소</button>
             <button onclick="showView('character-screen')" class="nav-button">캐릭터 요약</button>
+            <button onclick="showView('setting-screen')" class="nav-button">설정</button>
         </nav>
 
         <!-- 초기 설정 화면 -->
@@ -97,32 +98,32 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <div>
                         <h3 class="text-xl font-semibold mb-3 text-gray-700">1. 대표 장르</h3>
-                        <div id="main-genre-options" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                        <div id="main-genre-options" class="grid grid-cols-3 gap-2"></div>
                     </div>
                     <div>
                         <h3 class="text-xl font-semibold mb-3 text-gray-700">2. 세부 장르</h3>
-                        <div id="sub-genre-options" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                        <div id="sub-genre-options" class="grid grid-cols-3 gap-2"></div>
                     </div>
                      <div>
                         <h3 class="text-xl font-semibold mb-3 text-gray-700">3. 주인공 타입</h3>
-                        <div id="protagonist-type-options" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                        <div id="protagonist-type-options" class="grid grid-cols-3 gap-2"></div>
                     </div>
                     <div>
-                        <h3 class="text-xl font-semibold mb-3 text-gray-700">4. 주인공 초기 특성</h3>
-                        <div id="protagonist-trait-options" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-700">4. 주인공 초기특성</h3>
+                        <div id="protagonist-trait-options" class="grid grid-cols-3 gap-2"></div>
                     </div>
                     <div>
                         <h3 class="text-xl font-semibold mb-3 text-gray-700">5. 세계관 배경</h3>
-                        <div id="world-bg-options" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                        <div id="world-bg-options" class="grid grid-cols-3 gap-2"></div>
                     </div>
                     <div>
                         <h3 class="text-xl font-semibold mb-3 text-gray-700">6. 핵심 시스템</h3>
-                        <div id="world-system-options" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                        <div id="world-system-options" class="grid grid-cols-3 gap-2"></div>
                     </div>
                 </div>
                 <div class="mt-10 text-center">
                     <button id="start-button" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl">
-                        이세계로 출발
+                        양판소설 찍어내보자
                     </button>
                 </div>
             </div>
@@ -146,28 +147,24 @@
 
                 <div class="border-y py-6 mb-6">
                      <h3 class="text-lg font-semibold mb-3 text-center text-gray-700">다음 이야기 연출하기</h3>
-                     <p class="text-center text-gray-500 mb-4">다음 장면에 대한 키워드나 요구사항을 입력하면 AI가 반영합니다. (선택사항)</p>
-                     <textarea id="story-direction-input" class="w-full p-2 border rounded-md" rows="3" placeholder="예: 주인공의 숨겨진 능력이 각성하는 계기가 발생함."></textarea>
+                     <p class="text-center text-gray-500 mb-4">다음 회차에 대한 키워드나 요구사항을 입력하면 AI가 반영합니다. (선택사항)</p>
+                     <textarea id="story-direction-input" class="w-full p-2 border rounded-md" rows="3" placeholder="예: 나는 아무 생각이 없다. 나는 아무 생각이 없기 때문이다.."></textarea>
                 </div>
 
-                <h3 class="text-xl font-semibold mb-4 text-center">다음 이야기를 선택하세요.</h3>
-                <div id="loader" class="flex justify-center items-center my-4 hidden">
-                    <div class="spinner"></div>
-                    <p class="ml-4 text-gray-600">AI가 생각 중입니다...</p>
-                </div>
+                <h3 class="text-xl font-semibold mb-4 text-center">다음 회차 이야기를 선택하세요.</h3>
                 <div id="choices-container" class="space-y-4 mb-6"></div>
                 
                 <div class="text-center mb-6">
                     <button id="generate-choices-button" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg shadow-md transition-transform transform hover:scale-105 hidden">
-                        다음 이야기 생성하기
+                        다음 회차 생성하기
                     </button>
                 </div>
 
                 <div class="border-t pt-6">
                      <h3 class="text-lg font-semibold mb-3 text-center text-gray-700">원하는 선택지가 없나요?</h3>
-                     <p class="text-center text-gray-500 mb-4">다음 로그 내용을 직접 입력하여 스토리를 이어가세요.</p>
+                     <p class="text-center text-gray-500 mb-4">다음 회차 내용을 직접 입력하여 스토리를 이어가세요.</p>
                      <div class="flex flex-col gap-2">
-                        <textarea id="custom-input" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" rows="3" placeholder="예: 갑자기 하늘에서 검이 떨어진다."></textarea>
+                        <textarea id="custom-input" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" rows="3" placeholder="예: 나는 아무 생각이 없다. 나는 아무 생각이 없기 때문이다.."></textarea>
                         <button id="custom-submit-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-md transition-colors self-center">
                             적용하기
                         </button>
@@ -191,18 +188,18 @@
                 <h2 class="text-2xl font-bold mb-6 text-center border-b pb-4">기록 보관소</h2>
                 <div id="archive-content">
                     <div class="mb-8">
-                        <div class="flex items-center mb-4">
-                            <button id="toggle-archive-plot" onclick="toggleArchiveSection('archive-full-plot', 'toggle-archive-plot')" class="text-sky-600 hover:text-sky-800 font-bold w-6 mr-2 flex-shrink-0 text-left">[-]</button>
+                        <div class="flex items-center mb-4 cursor-pointer" onclick="toggleArchiveSection('archive-full-plot-content', 'toggle-archive-plot')">
+                            <button id="toggle-archive-plot" class="text-sky-600 hover:text-sky-800 font-bold w-6 mr-2 flex-shrink-0 text-left">[-]</button>
                             <h3 class="text-xl font-semibold text-gray-800">전체 줄거리</h3>
                         </div>
-                        <div id="archive-full-plot" class="whitespace-pre-wrap bg-gray-50 p-4 rounded-md border min-h-[100px]"></div>
+                        <div id="archive-full-plot-content" class="whitespace-pre-wrap bg-gray-50 p-4 rounded-md border min-h-[100px]"></div>
                     </div>
                     <div>
-                         <div class="flex items-center mb-4">
-                            <button id="toggle-archive-log" onclick="toggleArchiveSection('archive-story-log', 'toggle-archive-log')" class="text-sky-600 hover:text-sky-800 font-bold w-6 mr-2 flex-shrink-0 text-left">[-]</button>
+                         <div class="flex items-center mb-4 cursor-pointer" onclick="toggleArchiveSection('archive-story-log-content', 'toggle-archive-log')">
+                            <button id="toggle-archive-log" class="text-sky-600 hover:text-sky-800 font-bold w-6 mr-2 flex-shrink-0 text-left">[-]</button>
                             <h3 class="text-xl font-semibold text-gray-800">상세 스토리 로그</h3>
                         </div>
-                        <div id="archive-story-log" class="bg-gray-50 p-4 rounded-md border space-y-4 min-h-[200px]"></div>
+                        <div id="archive-story-log-content" class="bg-gray-50 p-4 rounded-md border space-y-4 min-h-[200px]"></div>
                     </div>
                 </div>
             </div>
@@ -222,6 +219,21 @@
                 </div>
             </div>
         </main>
+        
+        <!-- 설정 화면 -->
+        <main id="setting-screen" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-4 text-center border-b pb-4">세계관 설정</h2>
+                <p class="text-center text-gray-500 mb-6">AI가 반드시 따라야 할 핵심 규칙, 설정, 문체 등을 자유롭게 입력하세요. 이 내용은 모든 AI 작업에 최우선으로 반영됩니다.</p>
+                <textarea id="world-setting-input" class="w-full p-4 border rounded-md" rows="15" placeholder="예시)&#10; 스킬, 장비 등 레벨 제한 같은.."></textarea>
+                    // - 빨간 포션: 1레벨 이상 사용 가능. 체력 50 회복.&#10;- 하얀 포션: 50레벨 이상 사용 가능. 모든 상태이상 해제.&#10;- 이 세계의 모든 드래곤은 인간에게 적대적이다.&#10;- 문체는 간결하고 건조하게 유지해주세요.
+                <div class="mt-6 text-center">
+                    <button id="save-setting-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md">
+                        설정 적용하기
+                    </button>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
@@ -230,6 +242,7 @@
         const storyScreen = document.getElementById('story-screen');
         const archiveScreen = document.getElementById('archive-screen');
         const characterScreen = document.getElementById('character-screen');
+        const settingScreen = document.getElementById('setting-screen');
         const mainNav = document.getElementById('main-nav');
         const startButton = document.getElementById('start-button');
         const loadButton = document.getElementById('load-button');
@@ -246,20 +259,21 @@
         const storyDirectionInput = document.getElementById('story-direction-input');
         const addCharacterChoiceButton = document.getElementById('add-character-choice-button');
         const characterListDiv = document.getElementById('character-list');
-        const loader = document.getElementById('loader');
+        const worldSettingInput = document.getElementById('world-setting-input');
+        const saveSettingButton = document.getElementById('save-setting-button');
         const modal = document.getElementById('modal');
         const modalContentArea = document.getElementById('modal-content-area');
         const summaryStatus = document.getElementById('summary-status');
 
-        const allViews = [setupScreen, storyScreen, archiveScreen, characterScreen];
+        const allViews = [setupScreen, storyScreen, archiveScreen, characterScreen, settingScreen];
         
         const setupOptions = {
-            'main-genre': { elementId: 'main-genre-options', options: ['판타지', '무협', '현대판타지', '로맨스 판타지', '게임', '아포칼립스'] },
-            'sub-genre': { elementId: 'sub-genre-options', options: ['정통', '퓨전', '아카데미물', '책빙의', '성좌물', '탑등반물'] },
-            'protagonist-type': { elementId: 'protagonist-type-options', options: ['회귀자', '환생자', '빙의자', '차원이동자', '시한부', '일반인'] },
-            'protagonist-trait': { elementId: 'protagonist-trait-options', options: ['먼치킨 재능', '상태창', '히든 피스', '망나니', '악역', '고인물'] },
-            'world-bg': { elementId: 'world-bg-options', options: ['중세', '근대', '현대', '가상현실', '멸망 이후', '무림'] },
-            'world-system': { elementId: 'world-system-options', options: ['마법', '정령', '신성력', '무공', '초능력', '던전/게이트'] }
+            'main-genre': { elementId: 'main-genre-options', options: ['판타지', '무협', '현대판타지', '로맨스 판타지', 'SF', '게임', '아포칼립스', '대체역사', '사용자 지정'] },
+            'sub-genre': { elementId: 'sub-genre-options', options: ['아카데미물', '책빙의물', '성좌물', '탑등반물', '헌터물', '영지물', '전문가물', '생존물', '사용자 지정'] },
+            'protagonist-type': { elementId: 'protagonist-type-options', options: ['회귀자', '환생자', '빙의자', '시한부', '고인물', '악역/빌런', '망나니', '낙오자/F급', '사용자 지정'] },
+            'protagonist-trait': { elementId: 'protagonist-trait-options', options: ['상태창', '압도적 재능', '미래/공략 지식', '천재적 두뇌', '노력파', '가문/금수저', '흙수저/밑바닥', '특이 체질', '사용자 지정'] },
+            'world-bg': { elementId: 'world-bg-options', options: ['중세 판타지', '동양풍/무림', '현대 지구', '포스트 아포칼립스', '가상현실 게임', '우주/SF', '마법과 과학 공존', '고대/신화', '사용자 지정'] },
+            'world-system': { elementId: 'world-system-options', options: ['마법/마나', '무공/내공', '신성력/권능', '초능력/이능', '던전/게이트', '정령/소환수', '아이템/아티팩트', '연금술/제작', '사용자 지정'] }
         };
 
         let storyLog = [];
@@ -269,6 +283,8 @@
         let logNotes = {};
         let characters = [];
         let tempAICharacters = [];
+        let logFoldStates = {};
+        let worldSettings = "";
         let currentFilename = "";
 
         function showView(viewId) {
@@ -288,8 +304,8 @@
         }
 
         function populateArchive() {
-            const plotDiv = document.getElementById('archive-full-plot');
-            const logDiv = document.getElementById('archive-story-log');
+            const plotDiv = document.getElementById('archive-full-plot-content');
+            const logDiv = document.getElementById('archive-story-log-content');
 
             plotDiv.textContent = fullPlot || "- 전체 줄거리가 아직 정해지지 않았습니다. -";
             logDiv.innerHTML = '';
@@ -300,26 +316,79 @@
             }
 
             storyLog.forEach((entry, index) => {
-                const container = document.createElement('div');
+                const entryWrapper = document.createElement('div');
+                entryWrapper.className = "py-1";
+
+                const summaryLine = document.createElement('div');
+                summaryLine.className = "flex items-start justify-between group";
+
+                const summaryContent = document.createElement('div');
+                summaryContent.className = "flex-grow flex items-start";
+
+                const toggleContainer = document.createElement('div');
+                toggleContainer.className = "w-6 mr-2 flex-shrink-0 text-left";
+
+                if (expandedStories[index]) {
+                    const toggleButton = document.createElement('button');
+                    toggleButton.id = `archive-toggle-btn-${index}`;
+                    toggleButton.className = "text-sky-600 hover:text-sky-800 font-bold";
+                    toggleButton.onclick = () => toggleArchiveDetails(index);
+                    toggleContainer.appendChild(toggleButton);
+                }
+
+                summaryContent.appendChild(toggleContainer);
+
                 const p = document.createElement('p');
                 p.innerHTML = `<strong class="font-semibold text-gray-800">${index + 1}. ${entry}</strong>`;
-                container.appendChild(p);
+                summaryContent.appendChild(p);
+                summaryLine.appendChild(summaryContent);
+                entryWrapper.appendChild(summaryLine);
 
                 if (logNotes[index]) {
                     const noteP = document.createElement('p');
                     noteP.textContent = `➥ ${logNotes[index]}`;
-                    noteP.className = "text-sm text-indigo-600 italic pl-4 mt-1";
-                    container.appendChild(noteP);
+                    noteP.className = "text-sm text-indigo-600 italic pl-8 ml-1 mt-1";
+                    entryWrapper.appendChild(noteP);
                 }
 
                 if (expandedStories[index]) {
                     const expandedP = document.createElement('p');
+                    expandedP.id = `archive-details-${index}`;
                     expandedP.textContent = expandedStories[index];
-                    expandedP.className = "text-sm text-gray-600 pl-4 mt-2 border-l-2 border-sky-200 whitespace-pre-wrap";
-                    container.appendChild(expandedP);
+                    expandedP.className = "text-sm text-gray-600 pl-8 ml-1 mt-1 border-l-2 border-sky-200 whitespace-pre-wrap";
+                    entryWrapper.appendChild(expandedP);
                 }
-                logDiv.appendChild(container);
+                logDiv.appendChild(entryWrapper);
+                
+                const isFolded = logFoldStates[index] === true;
+                const detailsP = document.getElementById(`archive-details-${index}`);
+                const toggleBtn = document.getElementById(`archive-toggle-btn-${index}`);
+                if(detailsP && toggleBtn) {
+                    detailsP.classList.toggle('hidden', isFolded);
+                    toggleBtn.textContent = isFolded ? '[+]' : '[-]';
+                }
             });
+        }
+        
+        window.toggleArchiveDetails = (index) => {
+            const detailsP = document.getElementById(`archive-details-${index}`);
+            const toggleBtn = document.getElementById(`archive-toggle-btn-${index}`);
+            if (detailsP && toggleBtn) {
+                const isHidden = detailsP.classList.toggle('hidden');
+                toggleBtn.textContent = isHidden ? '[+]' : '[-]';
+                logFoldStates[index] = isHidden;
+                autoSave();
+            }
+        };
+
+        function showLoaderModal() {
+            const content = `
+                <div class="flex flex-col items-center justify-center p-8">
+                    <div class="spinner"></div>
+                    <p class="mt-4 text-gray-600">AI가 생각 중입니다...</p>
+                </div>
+            `;
+            showModal(content);
         }
 
         function showModal(contentHtml) {
@@ -345,32 +414,72 @@
                 category.options.forEach((option, index) => {
                     const optionId = `${key}-${index}`;
                     const div = document.createElement('div');
-                    div.innerHTML = `<input type="checkbox" id="${optionId}" name="${key}" value="${option}" class="hidden peer"><label for="${optionId}" class="block w-full text-center p-3 border rounded-lg cursor-pointer text-sm peer-checked:bg-sky-500 peer-checked:text-white peer-checked:border-sky-500 hover:bg-gray-100 transition-colors">${option}</label>`;
+                    let clickHandler = '';
+                    if (option === '사용자 지정') {
+                        clickHandler = `onclick="promptForCustomOption(event, '${key}', '${optionId}')"`;
+                    }
+                    div.innerHTML = `<input type="checkbox" id="${optionId}" name="${key}" value="${option}" class="hidden peer" ${clickHandler}><label id="label-${optionId}" for="${optionId}" class="block w-full text-center p-3 border rounded-lg cursor-pointer text-sm peer-checked:bg-sky-500 peer-checked:text-white peer-checked:border-sky-500 hover:bg-gray-100 transition-colors">${option}</label>`;
                     container.appendChild(div);
                 });
             }
         }
+
+        window.promptForCustomOption = (event, key, optionId) => {
+            const checkbox = document.getElementById(optionId);
+            if (!checkbox.checked) {
+                const label = document.getElementById(`label-${optionId}`);
+                checkbox.value = '사용자 지정';
+                label.textContent = '사용자 지정';
+                return;
+            }
+            event.preventDefault(); 
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">사용자 지정 입력</h3>
+                <p class="text-center text-gray-600 mb-4">원하는 설정을 직접 입력하세요.</p>
+                <input id="custom-option-input" type="text" class="w-full p-2 border rounded-md mb-6" placeholder="예: 빙의했더니 엑스트라">
+                <div class="flex justify-center gap-4">
+                    <button onclick="saveCustomOption('${optionId}')" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">확인</button>
+                    <button onclick="closeModal(); document.getElementById('${optionId}').checked=false;" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        window.saveCustomOption = (optionId) => {
+            const checkbox = document.getElementById(optionId);
+            const label = document.getElementById(`label-${optionId}`);
+            const input = document.getElementById('custom-option-input');
+            const value = input.value.trim();
+
+            if (value) {
+                checkbox.value = value;
+                label.textContent = `지정: ${value}`;
+                checkbox.checked = true;
+                closeModal();
+            } else {
+                checkbox.checked = false;
+                closeModal();
+            }
+        }
         
         async function callGeminiAPI(prompt, { expectJson = false, task = 'choice' } = {}) {
-            loader.classList.remove('hidden');
             if (expectJson) choicesContainer.innerHTML = '';
             
             const apiKey = "AIzaSyAcFrrcZU3z8sRPWhQ3SLNFh3OGdoeV2xA";
             
             if (apiKey === "여기에_AI_스튜디오에서_발급받은_API_키를_붙여넣으세요") {
                 showAlert("API 키가 설정되지 않았습니다. 스크립트에서 API 키를 입력해주세요.");
-                loader.classList.add('hidden');
                 return expectJson ? [] : "오류: API 키가 없습니다.";
             }
 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const systemPrompts = {
-                choice: `당신은 개연성을 중시하는 웹소설 작가입니다. 주어진 이야기의 '바로 다음'에 일어날 법한, 가장 자연스러운 사건 선택지 3개를 제안해야 합니다. 절대로 갑작스럽게 스토리를 비약시키지 마세요. 예를 들어, 이제 막 환생한 어린 주인공에게 갑자기 세계를 구하거나 엄청난 명성을 얻는 선택지를 주면 안 됩니다. 주인공의 현재 상황과 능력에 맞는, 점진적이고 현실적인 성장의 과정을 그릴 수 있는 선택지를 제시해야 합니다. 사용자의 연출 방향이 주어지면 그 내용을 최우선으로 반영하되, 개연성을 해치지 않는 선에서 적용해야 합니다. 전체 줄거리가 주어진 경우, 그 흐름을 따르되 반드시 단계적인 전개를 거쳐야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다. 예: ["선택지 1", "선택지 2", "선택지 3"]`,
-                expansion: `당신은 뛰어난 웹소설 작가입니다. 주어진 이야기의 맥락과 사용자의 연출 요구사항을 파악하여, 한 편의 완성도 높은 장면으로 만들어주세요. 장면을 묘사할 때, 등장인물의 심리를 보여주는 '독백', 관계와 스토리를 진전시키는 '캐릭터 간의 대화'를 적극적으로 추가해주세요. 필요하다면 '쿵!', '스르륵' 같은 '의성어/의태어'를 사용하여 생동감을 더해주세요. 특히 대화의 비중을 높여 이야기가 지루하지 않게 만들어야 합니다.`,
+                choice: `당신은 개연성과 설정을 중시하는 웹소설 작가 겸 감독입니다. 주어진 세계관 설정, 전체 줄거리, 그리고 현재까지의 이야기 흐름을 모두 고려하여, '바로 다음'에 일어날 가장 자연스러운 사건 선택지 3개를 제안해야 합니다. 절대로 갑작스럽게 스토리를 비약시키거나, 주어진 세계관 설정을 위반하는 내용을 만들면 안 됩니다. (예: 1레벨 캐릭터가 50레벨 포션을 사용). 주인공의 현재 상황과 능력에 맞는 점진적인 성장을 보여주는 선택지를 제시해야 합니다. 또한, 단순히 다음 사건만 생각하지 말고, 때로는 다른 인물의 시점으로 전환하거나, 짧은 시간 점프를 제안하는 등 감독의 시점에서 서사의 흐름을 풍부하게 만들 수 있는 다양한 선택지를 고려해야 합니다. 사용자의 연출 방향이 주어지면 그 내용을 최우선으로 반영하되, 개연성을 해치지 않는 선에서 적용해야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`,
+                expansion: `당신은 뛰어난 웹소설 작가입니다. 주어진 세계관 설정과 이야기의 맥락, 그리고 사용자의 연출 요구사항을 파악하여, 한 편의 완성도 높은 장면으로 만들어주세요. 장면을 묘사할 때, 등장인물의 심리를 보여주는 '독백', 관계와 스토리를 진전시키는 '캐릭터 간의 대화'를 적극적으로 추가해주세요. 필요하다면 '쿵!', '스르륵' 같은 '의성어/의태어'를 사용하여 생동감을 더해주세요. 특히 대화의 비중을 높여 이야기가 지루하지 않게 만들어야 합니다. 세계관 설정을 반드시 준수해야 합니다.`,
                 summary: `당신은 웹소설 전문 편집자입니다. 주어진 줄거리 전체를 분석하여, 핵심 설정, 주요 등장인물, 그리고 지금까지 일어난 핵심 사건들을 간결하게 요약해주세요. 이 요약본은 AI가 앞으로의 이야기를 쓸 때 참고할 자료이므로, 맥락을 이해하는 데 중요한 정보는 빠뜨리지 마세요.`,
-                plot_generation: `당신은 유능한 웹소설 기획자입니다. 주어진 소설의 상세한 1화 내용을 바탕으로, 앞으로 펼쳐질 이야기의 전체 줄거리(시놉시스)를 작성해주세요. 기승전결(도입, 전개, 위기, 절정, 결말) 구조에 따라 핵심 사건들을 순서대로 나열하여 흥미로운 이야기의 뼈대를 만들어주세요.`,
-                character_generation: `당신은 통찰력 있는 소설 편집자입니다. 주어진 스토리 전체 내용을 분석하여, 아직 프로필이 작성되지 않은 인물 중 비중이 크다고 생각되는 캐릭터를 최대 3명까지 찾아내어 프로필을 작성해주세요. 캐릭터의 작중 행적, 대사, 역할을 기반으로 성격, 외모, 배경 설정을 추론하여 채워야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`
+                plot_generation: `당신은 유능한 웹소설 기획자입니다. 주어진 세계관 설정과 소설의 상세한 1화 내용을 바탕으로, 앞으로 펼쳐질 이야기의 전체 줄거리(시놉시스)를 작성해주세요. 기승전결(도입, 전개, 위기, 절정, 결말) 구조에 따라 핵심 사건들을 순서대로 나열하여 흥미로운 이야기의 뼈대를 만들어주세요. 세계관 설정을 반드시 준수해야 합니다.`,
+                character_generation: `당신은 통찰력 있는 소설 편집자입니다. 주어진 세계관 설정과 스토리 전체 내용을 분석하여, 아직 프로필이 작성되지 않은 인물 중 비중이 크다고 생각되는 캐릭터를 최대 3명까지 찾아내어 프로필을 작성해주세요. 캐릭터의 작중 행적, 대사, 역할을 기반으로 성격, 외모, 배경 설정을 추론하여 채워야 합니다. 세계관 설정을 반드시 준수해야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`
             };
 
             const payload = {
@@ -418,8 +527,6 @@
                 console.error("Gemini API call failed:", error);
                 showAlert(`API 호출에 실패했습니다: ${error.message}`);
                 return expectJson ? [] : "오류: 이야기를 생성할 수 없습니다.";
-            } finally {
-                loader.classList.add('hidden');
             }
         }
 
@@ -453,7 +560,6 @@
                     const toggleButton = document.createElement('button');
                     toggleButton.id = `toggle-btn-${index}`;
                     toggleButton.className = "text-sky-600 hover:text-sky-800 font-bold";
-                    toggleButton.textContent = '[-]';
                     toggleButton.onclick = () => toggleDetails(index);
                     toggleContainer.appendChild(toggleButton);
                 }
@@ -492,8 +598,15 @@
                     expandedP.className = "text-sm text-gray-600 pl-8 ml-1 mt-1 border-l-2 border-sky-200 whitespace-pre-wrap";
                     entryWrapper.appendChild(expandedP);
                 }
-
                 storyLogDiv.appendChild(entryWrapper);
+
+                const isFolded = logFoldStates[index] === true;
+                const detailsP = document.getElementById(`details-${index}`);
+                const toggleBtn = document.getElementById(`toggle-btn-${index}`);
+                if(detailsP && toggleBtn) {
+                    detailsP.classList.toggle('hidden', isFolded);
+                    toggleBtn.textContent = isFolded ? '[+]' : '[-]';
+                }
             });
             storyLogDiv.scrollTop = storyLogDiv.scrollHeight;
         }
@@ -501,12 +614,11 @@
         window.toggleDetails = (index) => {
             const detailsP = document.getElementById(`details-${index}`);
             const toggleBtn = document.getElementById(`toggle-btn-${index}`);
-            if (detailsP) {
-                if (detailsP.classList.toggle('hidden')) {
-                    toggleBtn.textContent = '[+]';
-                } else {
-                    toggleBtn.textContent = '[-]';
-                }
+            if (detailsP && toggleBtn) {
+                const isHidden = detailsP.classList.toggle('hidden');
+                toggleBtn.textContent = isHidden ? '[+]' : '[-]';
+                logFoldStates[index] = isHidden;
+                autoSave();
             }
         };
 
@@ -527,7 +639,7 @@
             const content = `
                 <h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 한 줄 요약</h3>
                 <p class="text-center text-gray-600 mb-4">이 화의 핵심 내용이나 메시지를 기록하세요.</p>
-                <input id="log-note-input" type="text" class="w-full p-2 border rounded-md mb-6" value="${currentNote}" placeholder="예: 주인공의 각성을 암시하는 복선 등장">
+                <input id="log-note-input" type="text" class="w-full p-2 border rounded-md mb-6" value="${currentNote}" placeholder="">
                 <div class="flex justify-center gap-4">
                     <button onclick="saveLogNote(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">저장</button>
                     <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
@@ -558,6 +670,11 @@
             storyLog.splice(index);
             Object.keys(expandedStories).forEach(key => { if (key >= index) delete expandedStories[key]; });
             Object.keys(logNotes).forEach(key => { if (key >= index) delete logNotes[key]; });
+            for (let i = index; i < storyLog.length + 1; i++) {
+                if (logFoldStates.hasOwnProperty(i)) {
+                    delete logFoldStates[i];
+                }
+            }
             storySummary = "";
             fullPlot = "";
             summaryStatus.classList.add('hidden');
@@ -570,21 +687,24 @@
 
         async function generateNextChoices() {
             if (storyLog.length === 0) { choicesContainer.innerHTML = ''; return; }
+            showLoaderModal();
             generateChoicesButton.classList.add('hidden');
             let prompt = "";
             const recentLogs = storyLog.slice(-2).join('\n');
             const direction = storyDirectionInput.value.trim();
+            const worldSettingInstruction = worldSettings ? `[세계관 핵심 설정]:\n${worldSettings}\n\n` : "";
             const directionInstruction = direction ? `\n\n[사용자 연출 방향]: "${direction}"\n이 방향을 반드시 반영하여 선택지를 생성해주세요.` : "";
 
 
             if (fullPlot) {
-                 prompt = `[전체 줄거리]:\n${fullPlot}\n\n[최근 사건]:\n${recentLogs}\n\n[요청]: 위 전체 줄거리의 흐름에 맞춰, 최근 사건 다음에 일어날 흥미로운 이벤트 선택지 3개를 제안해주세요.${directionInstruction}`;
+                 prompt = `${worldSettingInstruction}[전체 줄거리]:\n${fullPlot}\n\n[최근 사건]:\n${recentLogs}\n\n[요청]: 위 전체 줄거리의 흐름에 맞춰, 최근 사건 다음에 일어날 흥미로운 이벤트 선택지 3개를 제안해주세요.${directionInstruction}`;
             } else if (storySummary) {
-                prompt = `[지금까지의 요약]:\n${storySummary}\n\n[최근 사건]:\n${recentLogs}\n\n[요청]: 위 내용에 이어질 다음 사건 선택지 3개를 제안해주세요.${directionInstruction}`;
+                prompt = `${worldSettingInstruction}[지금까지의 요약]:\n${storySummary}\n\n[최근 사건]:\n${recentLogs}\n\n[요청]: 위 내용에 이어질 다음 사건 선택지 3개를 제안해주세요.${directionInstruction}`;
             } else {
-                prompt = `[현재까지의 이야기]:\n${storyLog.join('\n')}\n\n[요청]: 위 내용에 이어질 다음 사건 선택지 3개를 제안해주세요.${directionInstruction}`;
+                prompt = `${worldSettingInstruction}[현재까지의 이야기]:\n${storyLog.join('\n')}\n\n[요청]: 위 내용에 이어질 다음 사건 선택지 3개를 제안해주세요.${directionInstruction}`;
             }
             const newChoices = await callGeminiAPI(prompt, { expectJson: true, task: 'choice' });
+            closeModal();
             displayChoices(newChoices);
             storyDirectionInput.value = '';
         }
@@ -655,6 +775,9 @@
             fullPlot = "";
             logNotes = {};
             characters = [];
+            logFoldStates = {};
+            worldSettings = "";
+            worldSettingInput.value = "";
             generateFullPlotButton.classList.add('hidden');
             updateStoryLog();
             
@@ -687,7 +810,7 @@
         });
 
         function parseAndLoadState(content) {
-            let tempLog = [], tempExpanded = {}, tempPlot = "", tempSummary = "", tempNotes = {}, tempChars = [];
+            let tempLog = [], tempExpanded = {}, tempPlot = "", tempSummary = "", tempNotes = {}, tempChars = [], tempFoldStates = {}, tempWorldSettings = "";
             
             const plotMatch = content.match(/\[전체 줄거리\]\n([\s\S]*?)\n\n================================/);
             if (plotMatch && plotMatch[1].trim() !== "- 전체 줄거리가 아직 정해지지 않았습니다. -") {
@@ -696,6 +819,14 @@
 
             const summaryMatch = content.match(/\[AI용 내용 요약본\]\n([\s\S]*?)\n\n================================/);
             if (summaryMatch) { tempSummary = summaryMatch[1].trim(); }
+            
+            const foldStateMatch = content.match(/\[UI 상태\]\n([\s\S]*?)\n\n================================/);
+            if(foldStateMatch) {
+                try { tempFoldStates = JSON.parse(foldStateMatch[1]); } catch(e) { console.error("UI 상태 파싱 오류:", e); }
+            }
+            
+            const worldSettingMatch = content.match(/\[세계관 설정\]\n([\s\S]*?)\n\n================================/);
+            if (worldSettingMatch) { tempWorldSettings = worldSettingMatch[1].trim(); }
 
             const charMatch = content.match(/\[캐릭터 정보\]\n([\s\S]*?)\n\n================================/);
             if(charMatch) {
@@ -722,10 +853,13 @@
             storySummary = tempSummary;
             logNotes = tempNotes;
             characters = tempChars;
+            logFoldStates = tempFoldStates;
+            worldSettings = tempWorldSettings;
             
             mainNav.classList.remove('hidden');
             showView('story-screen');
             updateStoryLog();
+            worldSettingInput.value = worldSettings;
 
             if (expandedStories[0]) { generateFullPlotButton.classList.remove('hidden'); }
             if (storySummary) {
@@ -750,6 +884,7 @@
         
         summarizeButton.addEventListener('click', async () => {
             if (storyLog.length < 3) { showAlert('요약하기에는 이야기가 너무 짧습니다.'); return; }
+            showLoaderModal();
             let fullText = storyLog.map((entry, index) => `${index + 1}. ${entry}\n${expandedStories[index] ? `(상세 내용) ${expandedStories[index]}\n` : ''}`).join('');
             const prompt = `다음은 웹소설의 전체 줄거리입니다. 이 내용을 요약해주세요:\n\n${fullText}`;
             storySummary = await callGeminiAPI(prompt, { task: 'summary' });
@@ -794,7 +929,9 @@
 
         async function generateAndShowAIPlot() {
             closeModal();
-            const prompt = `[소설의 1화 내용]:\n${expandedStories[0]}\n\n[요청]: 위 1화 내용을 바탕으로 소설의 전체 줄거리(시놉시스)를 작성해주세요.`;
+            showLoaderModal();
+            const worldSettingInstruction = worldSettings ? `[세계관 핵심 설정]:\n${worldSettings}\n\n` : "";
+            const prompt = `${worldSettingInstruction}[소설의 1화 내용]:\n${expandedStories[0]}\n\n[요청]: 위 1화 내용을 바탕으로 소설의 전체 줄거리(시놉시스)를 작성해주세요.`;
             const plot = await callGeminiAPI(prompt, { task: 'plot_generation'});
             showAIPlotWithEditOption(plot);
         }
@@ -902,21 +1039,23 @@
 
 
         window.showExpansionOptions = (index) => {
-            const content = `<h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 연출 키워드</h3><p class="text-center text-gray-600 mb-4">이 장면에 추가하고 싶은 키워드나 요구사항을 입력하세요. (선택사항)</p><input id="expansion-keyword" type="text" class="w-full p-2 border rounded-md mb-6" placeholder="예: 숨겨진 능력 발현, 새로운 인물 등장"><div class="flex justify-center gap-4"><button onclick="executeExpansion(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">부풀리기 실행</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
+            const content = `<h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 연출 키워드</h3><p class="text-center text-gray-600 mb-4">이 장면에 추가하고 싶은 키워드나 요구사항을 입력하세요. (선택사항)</p><textarea id="expansion-keyword" class="w-full p-2 border rounded-md mb-6" rows="3" placeholder="예: 숨겨진 능력 발현, 새로운 인물 등장"></textarea><div class="flex justify-center gap-4"><button onclick="executeExpansion(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">부풀리기 실행</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
             showModal(content);
         };
 
         window.executeExpansion = async (index) => {
             const keyword = document.getElementById('expansion-keyword').value.trim();
             closeModal();
-            let prompt;
+            showLoaderModal();
+            const worldSettingInstruction = worldSettings ? `[세계관 핵심 설정]:\n${worldSettings}\n\n` : "";
             const context = storySummary ? `[지금까지의 요약]:\n${storySummary}` : `[이전 줄거리]:\n${storyLog.slice(0, index).join('\n')}`;
             const keywordInstruction = keyword ? `\n\n[사용자 연출 키워드]: "${keyword}"\n이 키워드를 반드시 이야기에 반영해주세요.` : "";
 
+            let prompt;
             if (expandedStories[index]) {
-                prompt = `${context}\n\n[기존 장면]:\n"${expandedStories[index]}"\n\n[요청]: 위 장면의 내용을 기반으로, 분량을 1.5배에서 2배로 늘려 훨씬 더 상세하고 풍부한 이야기로 만들어주세요.${keywordInstruction}`;
+                prompt = `${worldSettingInstruction}${context}\n\n[기존 장면]:\n"${expandedStories[index]}"\n\n[요청]: 위 장면의 내용을 기반으로, 분량을 1.5배에서 2배로 늘려 훨씬 더 상세하고 풍부한 이야기로 만들어주세요.${keywordInstruction}`;
             } else {
-                prompt = `${context}\n\n[대상 문장]:\n"${storyLog[index]}"\n\n[요청]: 위 문장을 한 편의 상세한 장면으로 만들어주세요.${keywordInstruction}`;
+                prompt = `${worldSettingInstruction}${context}\n\n[대상 문장]:\n"${storyLog[index]}"\n\n[요청]: 위 문장을 한 편의 상세한 장면으로 만들어주세요.${keywordInstruction}`;
             }
             
             const expandedText = await callGeminiAPI(prompt, { task: 'expansion' });
@@ -950,6 +1089,12 @@
             let fullText = "양판소설 출판소 v.1 - 줄거리\ndesigned by 유성열\n\n================================\n\n";
             fullText += `[전체 줄거리]\n${fullPlot || "- 전체 줄거리가 아직 정해지지 않았습니다. -"}\n\n================================\n\n`;
             if (storySummary) { fullText += `[AI용 내용 요약본]\n${storySummary}\n\n================================\n\n`; }
+             if (Object.keys(logFoldStates).length > 0) {
+                fullText += `[UI 상태]\n${JSON.stringify(logFoldStates)}\n\n================================\n\n`;
+            }
+            if(worldSettings) {
+                fullText += `[세계관 설정]\n${worldSettings}\n\n================================\n\n`;
+            }
             if (characters.length > 0) {
                 fullText += `[캐릭터 정보]\n${JSON.stringify(characters, null, 2)}\n\n================================\n\n`;
             }
@@ -978,6 +1123,12 @@
             }
             console.log(`Auto-saved to ${currentFilename}`);
         }
+        
+        saveSettingButton.addEventListener('click', () => {
+            worldSettings = worldSettingInput.value;
+            autoSave();
+            showAlert('세계관 설정이 적용 및 저장되었습니다.');
+        });
 
         // --- 캐릭터 관련 함수들 ---
         addCharacterChoiceButton.addEventListener('click', () => {
@@ -994,10 +1145,12 @@
 
         async function generateCharactersWithAI() {
             closeModal();
+            showLoaderModal();
             const existingNames = characters.map(c => c.profile.이름);
+            const worldSettingInstruction = worldSettings ? `[세계관 핵심 설정]:\n${worldSettings}\n\n` : "";
             let context = `[전체 줄거리]:\n${fullPlot || "아직 없음"}\n\n[최신 로그]:\n${storyLog.slice(-5).join('\n')}\n\n[현재 등록된 캐릭터]: ${existingNames.join(', ')}`;
 
-            const prompt = `${context}\n\n[요청]: 위 스토리 내용에서 중요해 보이지만 아직 등록되지 않은 캐릭터를 최대 3명 찾아내 프로필을 생성해줘.`;
+            const prompt = `${worldSettingInstruction}${context}\n\n[요청]: 위 스토리 내용에서 중요해 보이지만 아직 등록되지 않은 캐릭터를 최대 3명 찾아내 프로필을 생성해줘.`;
 
             const generatedChars = await callGeminiAPI(prompt, { expectJson: true, task: 'character_generation'});
 
