@@ -135,7 +135,10 @@
                 <p id="summary-status" class="text-center text-sm text-sky-600 mb-4 hidden"></p>
                 <div id="story-log" class="min-h-[150px] bg-gray-50 p-4 rounded-md border mb-6 space-y-2 text-gray-700"></div>
 
-                <div class="text-center my-6">
+                <div class="text-center my-6 flex justify-center gap-4">
+                     <button id="edit-story-button" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg">
+                        스토리 수정하기
+                    </button>
                     <button id="expand-story-button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg">
                         스토리 부풀리기
                     </button>
@@ -163,10 +166,10 @@
                 <div class="border-t pt-6">
                      <h3 class="text-lg font-semibold mb-3 text-center text-gray-700">원하는 선택지가 없나요?</h3>
                      <p class="text-center text-gray-500 mb-4">다음 로그 내용을 직접 입력하여 스토리를 이어가세요.</p>
-                     <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="text" id="custom-input" class="flex-grow w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="예: 갑자기 하늘에서 검이 떨어진다.">
-                        <button id="custom-submit-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-md transition-colors">
-                            제출
+                     <div class="flex flex-col gap-2">
+                        <textarea id="custom-input" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" rows="3" placeholder="예: 갑자기 하늘에서 검이 떨어진다."></textarea>
+                        <button id="custom-submit-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-md transition-colors self-center">
+                            적용하기
                         </button>
                      </div>
                 </div>
@@ -187,10 +190,20 @@
              <div class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-2xl font-bold mb-6 text-center border-b pb-4">기록 보관소</h2>
                 <div id="archive-content">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-800">전체 줄거리</h3>
-                    <div id="archive-full-plot" class="whitespace-pre-wrap bg-gray-50 p-4 rounded-md border mb-8 min-h-[100px]"></div>
-                    <h3 class="text-xl font-semibold mb-4 text-gray-800">상세 스토리 로그</h3>
-                    <div id="archive-story-log" class="bg-gray-50 p-4 rounded-md border space-y-4 min-h-[200px]"></div>
+                    <div class="mb-8">
+                        <div class="flex items-center mb-4">
+                            <button id="toggle-archive-plot" onclick="toggleArchiveSection('archive-full-plot', 'toggle-archive-plot')" class="text-sky-600 hover:text-sky-800 font-bold w-6 mr-2 flex-shrink-0 text-left">[-]</button>
+                            <h3 class="text-xl font-semibold text-gray-800">전체 줄거리</h3>
+                        </div>
+                        <div id="archive-full-plot" class="whitespace-pre-wrap bg-gray-50 p-4 rounded-md border min-h-[100px]"></div>
+                    </div>
+                    <div>
+                         <div class="flex items-center mb-4">
+                            <button id="toggle-archive-log" onclick="toggleArchiveSection('archive-story-log', 'toggle-archive-log')" class="text-sky-600 hover:text-sky-800 font-bold w-6 mr-2 flex-shrink-0 text-left">[-]</button>
+                            <h3 class="text-xl font-semibold text-gray-800">상세 스토리 로그</h3>
+                        </div>
+                        <div id="archive-story-log" class="bg-gray-50 p-4 rounded-md border space-y-4 min-h-[200px]"></div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -226,6 +239,7 @@
         const customInput = document.getElementById('custom-input');
         const customSubmitButton = document.getElementById('custom-submit-button');
         const expandStoryButton = document.getElementById('expand-story-button');
+        const editStoryButton = document.getElementById('edit-story-button');
         const summarizeButton = document.getElementById('summarize-button');
         const generateFullPlotButton = document.getElementById('generate-full-plot-button');
         const generateChoicesButton = document.getElementById('generate-choices-button');
@@ -496,6 +510,18 @@
             }
         };
 
+        window.toggleArchiveSection = (contentId, buttonId) => {
+            const contentDiv = document.getElementById(contentId);
+            const toggleBtn = document.getElementById(buttonId);
+            if (contentDiv && toggleBtn) {
+                if (contentDiv.classList.toggle('hidden')) {
+                    toggleBtn.textContent = '[+]';
+                } else {
+                    toggleBtn.textContent = '[-]';
+                }
+            }
+        };
+
         window.showLogNoteEditor = (index) => {
             const currentNote = logNotes[index] || "";
             const content = `
@@ -733,28 +759,74 @@
             autoSave();
         });
 
-        generateFullPlotButton.addEventListener('click', async () => {
-            if(fullPlot){
-                showFullPlotEditor(fullPlot);
-                return;
+        generateFullPlotButton.addEventListener('click', () => {
+            if (fullPlot) {
+                showFullPlotChoiceModal(true);
+            } else {
+                 if (!expandedStories[0]) { showAlert('1화를 먼저 부풀려야 전체 스토리를 생성할 수 있습니다.'); return; }
+                showFullPlotChoiceModal(false);
             }
-            if (!expandedStories[0]) { showAlert('1화를 먼저 부풀려야 전체 스토리를 생성할 수 있습니다.'); return; }
-            
-            const prompt = `[소설의 1화 내용]:\n${expandedStories[0]}\n\n[요청]: 위 1화 내용을 바탕으로 소설의 전체 줄거리(시놉시스)를 작성해주세요.`;
-            const plot = await callGeminiAPI(prompt, { task: 'plot_generation'});
-            fullPlot = plot;
-            showFullPlotEditor(fullPlot);
         });
 
-        generateChoicesButton.addEventListener('click', generateNextChoices);
+        function showFullPlotChoiceModal(hasExistingPlot) {
+            let content;
+            if (hasExistingPlot) {
+                content = `
+                    <h3 class="text-xl font-bold mb-4 text-center">전체 스토리</h3>
+                    <p class="text-center text-gray-600 mb-6">어떻게 하시겠습니까?</p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <button onclick="showFullPlotEditor(fullPlot)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full">기존 줄거리 확인/수정</button>
+                        <button onclick="generateAndShowAIPlot()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg w-full">AI로 새로 추천받기</button>
+                    </div>
+                `;
+            } else {
+                 content = `
+                    <h3 class="text-xl font-bold mb-4 text-center">전체 스토리 생성 방식 선택</h3>
+                    <p class="text-center text-gray-600 mb-6">어떻게 줄거리를 생성하시겠습니까?</p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <button onclick="showFullPlotEditor('')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full">직접 입력</button>
+                        <button onclick="generateAndShowAIPlot()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg w-full">AI 추천</button>
+                    </div>
+                `;
+            }
+            showModal(content);
+        }
+
+        async function generateAndShowAIPlot() {
+            closeModal();
+            const prompt = `[소설의 1화 내용]:\n${expandedStories[0]}\n\n[요청]: 위 1화 내용을 바탕으로 소설의 전체 줄거리(시놉시스)를 작성해주세요.`;
+            const plot = await callGeminiAPI(prompt, { task: 'plot_generation'});
+            showAIPlotWithEditOption(plot);
+        }
+
+        function showAIPlotWithEditOption(plotText) {
+            const plotHtml = `<div class="whitespace-pre-wrap p-4 bg-gray-100 border rounded-md h-96 overflow-y-auto">${plotText}</div>`;
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">AI 추천 줄거리</h3>
+                ${plotHtml}
+                <div class="flex justify-center gap-4 mt-6">
+                    <button onclick="confirmFullPlot(true, \`${plotText.replace(/`/g, "\\`")}\`)" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">줄거리 확정</button>
+                    <button onclick="showFullPlotEditor(\`${plotText.replace(/`/g, "\\`")}\`)" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg">수정</button>
+                    <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
         
-        window.showFullPlotEditor = (plotText) => {
-             const content = `<h3 class="text-xl font-bold mb-4 text-center">전체 스토리 편집</h3><textarea id="full-plot-textarea" class="w-full h-96 p-2 border rounded-md">${plotText}</textarea><div class="flex justify-center gap-4 mt-6"><button onclick="saveFullPlot()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">줄거리 확정</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
+        window.showFullPlotEditor = (plotText = '') => {
+            closeModal();
+            const initialText = plotText || fullPlot || '';
+            const content = `<h3 class="text-xl font-bold mb-4 text-center">전체 스토리 편집</h3><textarea id="full-plot-textarea" class="w-full h-96 p-2 border rounded-md">${initialText}</textarea><div class="flex justify-center gap-4 mt-6"><button onclick="saveFullPlot()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">줄거리 확정</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
             showModal(content);
         };
+        
+        window.saveFullPlot = () => {
+            const newPlot = document.getElementById('full-plot-textarea').value;
+            confirmFullPlot(false, newPlot);
+        };
 
-        window.saveFullPlot = async () => {
-            fullPlot = document.getElementById('full-plot-textarea').value;
+        window.confirmFullPlot = (fromAI, plotText) => {
+            fullPlot = plotText;
             closeModal();
             showAlert('전체 줄거리가 저장되었습니다. 이제부터 AI는 이 줄거리를 따라갑니다.');
             autoSave();
@@ -768,6 +840,66 @@
             const content = `<h3 class="text-xl font-bold mb-4 text-center">부풀릴 화 선택</h3><div class="space-y-2">${listHtml}</div><div class="text-center mt-6"><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
             showModal(content);
         });
+
+        editStoryButton.addEventListener('click', () => {
+            if (storyLog.length === 0) { showAlert('수정할 스토리가 없습니다.'); return; }
+            let listHtml = storyLog.map((log, index) => 
+                `<button onclick="showLogEditor(${index})" class="w-full text-left p-3 mb-2 border rounded-md hover:bg-gray-100">${index + 1}. ${log.substring(0, 50)}...</button>`
+            ).join('');
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">수정할 화 선택</h3>
+                <div class="space-y-2">${listHtml}</div>
+                <div class="text-center mt-6">
+                    <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        });
+
+        window.showLogEditor = (index) => {
+            const logSummary = storyLog[index];
+            const logDetails = expandedStories[index] || "";
+            const summaryInputHtml = index === 0 
+                ? `<p class="w-full p-2 border rounded-md bg-gray-100 text-gray-500 cursor-not-allowed">${logSummary}</p>`
+                : `<input id="log-summary-edit" class="w-full p-2 border rounded-md" value="${logSummary}">`;
+            
+            const detailsTextareaHtml = expandedStories[index] !== undefined
+                ? `<h4 class="font-semibold mt-4 mb-2">상세 내용</h4>
+                   <textarea id="log-details-edit" class="w-full h-48 p-2 border rounded-md">${logDetails}</textarea>`
+                : '';
+
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 수정하기</h3>
+                <div>
+                    <h4 class="font-semibold mb-2">한 줄 요약 (로그)</h4>
+                    ${summaryInputHtml}
+                    ${detailsTextareaHtml}
+                </div>
+                <div class="flex justify-center gap-4 mt-6">
+                    <button onclick="saveLogEdits(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">저장</button>
+                    <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        };
+
+        window.saveLogEdits = (index) => {
+            if (index > 0) {
+                const summaryInput = document.getElementById('log-summary-edit');
+                storyLog[index] = summaryInput.value;
+            }
+
+            const detailsTextarea = document.getElementById('log-details-edit');
+            if (detailsTextarea) {
+                expandedStories[index] = detailsTextarea.value;
+            }
+
+            closeModal();
+            updateStoryLog();
+            autoSave();
+            showAlert(`${index + 1}화가 수정되었습니다.`);
+        };
+
 
         window.showExpansionOptions = (index) => {
             const content = `<h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 연출 키워드</h3><p class="text-center text-gray-600 mb-4">이 장면에 추가하고 싶은 키워드나 요구사항을 입력하세요. (선택사항)</p><input id="expansion-keyword" type="text" class="w-full p-2 border rounded-md mb-6" placeholder="예: 숨겨진 능력 발현, 새로운 인물 등장"><div class="flex justify-center gap-4"><button onclick="executeExpansion(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">부풀리기 실행</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
