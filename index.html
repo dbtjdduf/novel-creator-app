@@ -144,7 +144,7 @@
                         스토리 부풀리기
                     </button>
                 </div>
-
+                
                 <div class="border-y py-6 mb-6">
                      <h3 class="text-lg font-semibold mb-3 text-center text-gray-700">다음 화 내용 직접 입력하기</h3>
                      <p class="text-center text-gray-500 mb-4">다음 화의 줄거리를 직접 작성하여 스토리를 이어가세요.</p>
@@ -155,9 +155,9 @@
                         </button>
                      </div>
                 </div>
-                
+
                 <div class="text-center my-6">
-                    <button id="generate-chapter-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl">
+                    <button id="generate-chapter-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
                         줄거리 기반 스토리 생성하기
                     </button>
                 </div>
@@ -464,7 +464,7 @@
                 expansion: `당신은 뛰어난 웹소설 작가입니다. 주어진 세계관 설정과 이야기의 맥락, 그리고 사용자의 연출 요구사항을 파악하여, 한 편의 완성도 높은 장면으로 만들어주세요. 장면을 묘사할 때, 등장인물의 심리를 보여주는 '독백', 관계와 스토리를 진전시키는 '캐릭터 간의 대화'를 적극적으로 추가해주세요. 필요하다면 '쿵!', '스르륵' 같은 '의성어/의태어'를 사용하여 생동감을 더해주세요. 특히 대화의 비중을 높여 이야기가 지루하지 않게 만들어야 합니다. 세계관 설정을 반드시 준수해야 합니다.`,
                 summary: `당신은 웹소설 전문 편집자입니다. 주어진 줄거리 전체를 분석하여, 핵심 설정, 주요 등장인물, 그리고 지금까지 일어난 핵심 사건들을 간결하게 요약해주세요. 이 요약본은 AI가 앞으로의 이야기를 쓸 때 참고할 자료이므로, 맥락을 이해하는 데 중요한 정보는 빠뜨리지 마세요.`,
                 plot_generation: `당신은 유능한 웹소설 기획자입니다. 주어진 세계관 설정과 소설의 상세한 1화 내용을 바탕으로, 앞으로 펼쳐질 이야기의 전체 줄거리(시놉시스)를 작성해주세요. **도입(기), 전개(승), 위기(전), 절정(결), 에필로그** 구조에 따라 핵심 사건들을 순서대로 나열하여 흥미로운 이야기의 뼈대를 만들어주세요. 세계관 설정을 반드시 준수해야 합니다.`,
-                chapter_generation: `당신은 유능한 웹소설 작가입니다. 주어진 세계관 설정, 전체 줄거리, 현재까지의 이야기, 그리고 목표 플롯 지점을 모두 참고하여, 현재 시점에서 목표 지점으로 이야기를 매끄럽게 연결하는 완성된 한 편의 소설(약 4000~5000자 분량)을 창작해야 합니다. 단순히 요약하는 것이 아니라, 상세한 묘사, 풍부한 대화, 인물의 심리 등을 포함한 완성된 '화(chapter)'를 써야 합니다.`,
+                chapter_generation: `당신은 유능한 웹소설 작가입니다. 주어진 세계관 설정, 전체 줄거리, 현재까지의 이야기, 그리고 목표 플롯 지점을 모두 참고하여, 현재 시점에서 목표 지점으로 이야기를 매끄럽게 연결하는 완성된 한 편의 소설(약 4000~5000자 분량)과 그 내용을 한 문장으로 요약한 '요약'을 함께 생성해야 합니다. 단순히 요약하는 것이 아니라, 상세한 묘사, 풍부한 대화, 인물의 심리 등을 포함한 완성된 '화(chapter)'를 써야 합니다.`,
                 character_generation: `당신은 통찰력 있는 소설 편집자입니다. 주어진 세계관 설정과 스토리 전체 내용을 분석하여, 아직 프로필이 작성되지 않은 인물 중 비중이 크다고 생각되는 캐릭터를 최대 3명까지 찾아내어 프로필을 작성해주세요. 캐릭터의 작중 행적, 대사, 역할을 기반으로 성격, 외모, 배경 설정을 추론하여 채워야 합니다. 세계관 설정을 반드시 준수해야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`
             };
 
@@ -472,8 +472,22 @@
                 contents: [{ parts: [{ text: prompt }] }],
                 systemInstruction: { parts: [{ text: systemPrompts[task] }] }
             };
-
-            if (expectJson && task === 'character_generation') {
+            
+            if (expectJson && task === 'chapter_generation') {
+                 payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "summary": { "type": "STRING" },
+                                "full_text": { "type": "STRING" }
+                            }
+                        }
+                    }
+                };
+            } else if (expectJson && task === 'character_generation') {
                  payload.generationConfig = {
                     responseMimeType: "application/json",
                     responseSchema: {
@@ -686,7 +700,7 @@
             currentFilename = filename;
 
             closeModal();
-
+            
             const selectedOptions = {};
             for (const key in setupOptions) {
                 const checked = document.querySelectorAll(`input[name="${key}"]:checked`);
@@ -790,6 +804,7 @@
             worldSettingInput.value = worldSettings;
 
             if (expandedStories[0]) { generateFullPlotButton.classList.remove('hidden'); }
+            if (fullPlot) generateChapterButton.disabled = false;
             if (storySummary) {
                 summaryStatus.textContent = "✔ 요약본이 생성되어 AI의 배경지식으로 사용됩니다.";
                 summaryStatus.classList.remove('hidden');
@@ -900,6 +915,7 @@
 
         window.confirmFullPlot = (fromAI, plotText) => {
             fullPlot = plotText;
+            generateChapterButton.disabled = !fullPlot;
             closeModal();
             showAlert('전체 줄거리가 저장되었습니다. 이제부터 AI는 이 줄거리를 따라갑니다.');
             autoSave();
