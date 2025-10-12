@@ -687,7 +687,24 @@
                 showAlert('하나 이상의 초기 설정을 선택해주세요!');
                 return;
             }
-            promptInitialSave();
+            promptInitialSave(false);
+        });
+
+        startPlotButton.addEventListener('click', () => {
+            const selectedOptions = {};
+            let hasSelection = false;
+            for (const key in setupOptions) {
+                const checked = document.querySelectorAll(`input[name="${key}"]:checked`);
+                if (checked.length > 0) {
+                    hasSelection = true;
+                    selectedOptions[key] = Array.from(checked).map(cb => cb.value);
+                }
+            }
+            if (!hasSelection) {
+                showAlert('하나 이상의 초기 설정을 선택해주세요!');
+                return;
+            }
+            promptInitialSave(true);
         });
         
         function promptInitialSave(isPlotMode = false) {
@@ -728,14 +745,6 @@
             for (const key in selectedOptions) { initialStory += `${selectedOptions[key].join('/')}, `; }
             initialStory = initialStory.slice(0, -2) + ".";
 
-            if(isPlotMode) {
-                startPlottingWorkflow(initialStory);
-                return;
-            }
-            
-            mainNav.classList.remove('hidden');
-            showView('story-screen');
-            
             storyLog = [initialStory + " 이 설정으로 이야기가 시작됩니다."];
             expandedStories = {};
             storySummary = "";
@@ -747,8 +756,15 @@
             worldSettingInput.value = "";
             generateFullPlotButton.classList.add('hidden');
             generateChapterButton.disabled = true;
-            updateStoryLog();
+
+            if(isPlotMode) {
+                startPlottingWorkflow(initialStory);
+                return;
+            }
             
+            mainNav.classList.remove('hidden');
+            showView('story-screen');
+            updateStoryLog();
             autoSave(true);
         }
 
@@ -1102,104 +1118,155 @@
             showAlert('세계관 설정이 적용 및 저장되었습니다.');
         });
 
-        // --- 줄거리 기반 스토리 생성 ---
-        generateChapterButton.addEventListener('click', () => {
-            if (generateChapterButton.disabled) return;
-            const content = `
-                <h3 class="text-xl font-bold mb-4 text-center">생성할 스토리 파트 선택</h3>
-                <p class="text-center text-gray-600 mb-6">전체 줄거리의 어느 부분에 대한 이야기를 생성하시겠습니까?</p>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <button onclick="startChapterGeneration('도입(기)')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">도입 (기)</button>
-                    <button onclick="startChapterGeneration('전개(승)')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">전개 (승)</button>
-                    <button onclick="startChapterGeneration('위기(전)')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">위기 (전)</button>
-                    <button onclick="startChapterGeneration('절정(결)')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">절정 (결)</button>
-                    <button onclick="startChapterGeneration('에필로그')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg col-span-2 sm:col-span-1">에필로그</button>
-                </div>
-            `;
-            showModal(content);
+        // --- 플롯 작성하기 워크플로우 ---
+        startPlotButton.addEventListener('click', () => {
+            const selectedOptions = {};
+            let hasSelection = false;
+            for (const key in setupOptions) {
+                const checked = document.querySelectorAll(`input[name="${key}"]:checked`);
+                if (checked.length > 0) {
+                    hasSelection = true;
+                }
+            }
+            if (!hasSelection) {
+                showAlert('하나 이상의 초기 설정을 선택해주세요!');
+                return;
+            }
+            promptInitialSave(true);
         });
-        
-        window.startChapterGeneration = async (part) => {
-            closeModal();
-            showLoaderModal(`AI가 줄거리의 '${part}' 파트를 기반으로<br>여러 버전의 다음 화를 창작 중입니다... (최대 2~3분 소요)`);
-            
+
+        async function startPlottingWorkflow(initialSettingsText) {
+            plotQuestions = [];
+            plotAnswers = [];
+            currentQuestionIndex = 0;
+            showLoaderModal("AI가 플롯 구성을 위한 질문을 생성 중입니다...");
+
             try {
-                const worldSettingInstruction = worldSettings ? `[세계관 핵심 설정]:\n${worldSettings}\n\n` : "";
-                let context = `[전체 줄거리]:\n${fullPlot}\n\n[현재까지의 이야기 요약]:\n${storySummary || storyLog.join('\n')}\n\n[목표 플롯 지점]: 전체 줄거리의 '${part}' 부분.`;
-                const prompt = `${worldSettingInstruction}${context}\n\n[요청]: 현재까지의 이야기에서 '${part}' 부분으로 스토리를 진행시키기 위한 다음 한 편의 완성된 이야기를 3가지 버전으로 각각 창작해줘.`;
+                const prompt = `[초기 설정]: ${initialSettingsText}\n\n[요청]: 위 설정을 바탕으로 매력적인 소설 플롯을 만들기 위해 작가에게 물어봐야 할 핵심 질문들을 10~15개 생성해주세요.`;
+                plotQuestions = await callGeminiAPI(prompt, { expectJson: true, task: 'plot_question_generation' });
 
-                const generatedChapters = await callGeminiAPI(prompt, { expectJson: true, task: 'chapter_generation' });
-
-                if (!generatedChapters || generatedChapters.length === 0) {
-                    throw new Error("AI가 이야기를 생성하는 데 실패했습니다. 다시 시도해주세요.");
+                if (!plotQuestions || plotQuestions.length === 0) {
+                    throw new Error("플롯 질문 생성에 실패했습니다.");
                 }
                 
-                tempGeneratedChapters = generatedChapters;
-                showGeneratedChapterChoices();
-
-            } catch (error) {
+                displayNextPlotQuestion();
+            } catch(error) {
                 showAlert(`오류 발생: ${error.message}`);
                 closeModal();
             }
-        };
+        }
 
-        function showGeneratedChapterChoices() {
-            let choicesHtml = tempGeneratedChapters.map((chapter, index) => {
-                return `
-                    <div class="p-4 border rounded-lg bg-gray-50 mb-4">
-                        <div class="flex items-start">
-                            <input type="radio" name="chapter-choice" id="chapter-choice-${index}" value="${index}" class="mt-1.5 mr-3 h-4 w-4">
-                            <label for="chapter-choice-${index}" class="flex-grow">
-                                <p class="font-semibold">${index + 1}번 제안 요약:</p>
-                                <p class="text-sm text-gray-700">${chapter.summary}</p>
-                            </label>
-                            <button onclick="viewFullChapter(${index})" class="ml-4 text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 flex-shrink-0">전체 내용 보기</button>
-                        </div>
+        function displayNextPlotQuestion() {
+            if (currentQuestionIndex < plotQuestions.length) {
+                const question = plotQuestions[currentQuestionIndex];
+                const content = `
+                    <h3 class="text-xl font-bold mb-2 text-center">AI 플롯 인터뷰</h3>
+                    <p class="text-center text-gray-500 mb-6">(${currentQuestionIndex + 1}/${plotQuestions.length})</p>
+                    <label for="plot-answer-input" class="font-semibold block mb-2">${question}</label>
+                    <textarea id="plot-answer-input" class="w-full p-2 border rounded-md" rows="5"></textarea>
+                    <div class="text-center mt-6">
+                        <button onclick="handlePlotAnswer()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg">다음</button>
                     </div>
                 `;
-            }).join('');
+                showModal(content);
+            } else {
+                generatePlotOutlines();
+            }
+        }
+
+        function handlePlotAnswer() {
+            const answerInput = document.getElementById('plot-answer-input');
+            const answer = answerInput.value.trim();
+            if (!answer) {
+                showAlert("답변을 입력해주세요.");
+                return;
+            }
+            plotAnswers.push({ question: plotQuestions[currentQuestionIndex], answer: answer });
+            currentQuestionIndex++;
+            displayNextPlotQuestion();
+        }
+
+        async function generatePlotOutlines() {
+            showLoaderModal("답변을 바탕으로 전체 줄거리 초안 2~3개를 생성 중입니다...");
+            let fullInterview = plotAnswers.map(item => `Q: ${item.question}\nA: ${item.answer}`).join('\n\n');
+            const initialSettings = storyLog[0];
+            
+            try {
+                const prompt = `[초기 설정]:\n${initialSettings}\n\n[작가 인터뷰 내용]:\n${fullInterview}\n\n[요청]: 위 내용을 모두 종합하여, 이 모든 요소를 만족시키는 흥미로운 전체 줄거리(시놉시스)를 2~3가지 버전으로 창작해주세요.`;
+                const outlines = await callGeminiAPI(prompt, { expectJson: true, task: 'plot_outline_generation' });
+
+                if (!outlines || outlines.length === 0) {
+                    throw new Error("줄거리 초안 생성에 실패했습니다.");
+                }
+                showPlotOutlineChoices(outlines);
+            } catch(error) {
+                showAlert(`오류 발생: ${error.message}`);
+                closeModal();
+            }
+        }
+        
+        function showPlotOutlineChoices(outlines) {
+            let choicesHtml = outlines.map((outline, index) => `
+                <div class="p-4 border rounded-lg bg-gray-50 mb-4">
+                     <div class="flex items-start">
+                        <input type="radio" name="plot-choice" id="plot-choice-${index}" value="${index}" class="mt-1.5 mr-3 h-4 w-4">
+                        <label for="plot-choice-${index}" class="flex-grow">
+                            <h4 class="font-bold">줄거리 제안 ${index + 1}</h4>
+                            <p class="text-sm text-gray-700 whitespace-pre-wrap mt-2">${outline.substring(0, 300)}...</p>
+                        </label>
+                    </div>
+                </div>
+            `).join('');
 
             const content = `
-                <h3 class="text-xl font-bold mb-4 text-center">AI가 제안하는 다음 화</h3>
-                <p class="text-center text-gray-600 mb-6">AI가 여러 버전의 다음 이야기를 생성했습니다. 마음에 드는 버전을 선택하고 '채택하기'를 눌러주세요.</p>
+                <h3 class="text-xl font-bold mb-4 text-center">AI가 제안하는 전체 줄거리</h3>
+                <p class="text-center text-gray-600 mb-6">마음에 드는 줄거리를 선택하고 채택해주세요.</p>
                 <div>${choicesHtml}</div>
                 <div class="flex justify-center gap-4 mt-6">
-                    <button onclick="adoptSelectedChapter()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">채택하기</button>
+                    <button onclick="finalizePlotSelection(${JSON.stringify(outlines).replace(/"/g, '&quot;')})" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">줄거리 채택하기</button>
                     <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
                 </div>
             `;
             showModal(content);
         }
 
-        window.viewFullChapter = (index) => {
-            const chapter = tempGeneratedChapters[index];
-            const content = `
-                <h3 class="text-xl font-bold mb-4 text-center">${index + 1}번 제안 전체 내용</h3>
-                <div class="whitespace-pre-wrap p-4 bg-gray-100 border rounded-md h-96 overflow-y-auto">${chapter.full_text}</div>
-                <div class="text-center mt-6">
-                     <button onclick="showGeneratedChapterChoices()" class="bg-gray-500 text-white py-2 px-6 rounded-lg">뒤로 가기</button>
-                </div>
-            `;
-            showModal(content);
-        };
-
-        window.adoptSelectedChapter = () => {
-            const selectedRadio = document.querySelector('input[name="chapter-choice"]:checked');
+        async function finalizePlotSelection(outlines) {
+            const selectedRadio = document.querySelector('input[name="plot-choice"]:checked');
             if (!selectedRadio) {
-                showAlert("채택할 이야기를 선택해주세요.");
+                showAlert("채택할 줄거리를 선택해주세요.");
                 return;
             }
             const selectedIndex = parseInt(selectedRadio.value, 10);
-            const selectedChapter = tempGeneratedChapters[selectedIndex];
+            fullPlot = outlines[selectedIndex];
+            
+            showLoaderModal("선택된 줄거리를 기반으로 전체 화의 요약을 생성 중입니다...");
 
-            handleChoice(selectedChapter.summary);
-            expandedStories[storyLog.length - 1] = selectedChapter.full_text;
+            try {
+                const prompt = `[전체 줄거리]:\n${fullPlot}\n\n[요청]: 위 줄거리를 바탕으로, 약 50~100화 분량의 웹소설로 만들기 위한 각 화의 '한 줄 요약' 목록을 생성해주세요.`;
+                const chapterSummaries = await callGeminiAPI(prompt, { expectJson: true, task: 'chapter_summary_generation' });
 
-            closeModal();
-            updateStoryLog();
-            autoSave();
-            showAlert(`${storyLog.length}화가 성공적으로 추가되었습니다.`);
-        };
+                if (!chapterSummaries || chapterSummaries.length === 0) {
+                    throw new Error("화별 요약 생성에 실패했습니다.");
+                }
+
+                storyLog.push(...chapterSummaries);
+                
+                mainNav.classList.remove('hidden');
+                showView('story-screen');
+                updateStoryLog();
+                generateFullPlotButton.classList.remove('hidden');
+                generateChapterButton.disabled = false;
+                autoSave();
+                closeModal();
+                showAlert("플롯 작성이 완료되었습니다! 전체 줄거리와 각 화의 요약이 자동으로 생성되었습니다.");
+
+            } catch (error) {
+                showAlert(`오류 발생: ${error.message}`);
+                closeModal();
+            }
+        }
+
+
         // --- 캐릭터 관련 함수들 ---
         addCharacterChoiceButton.addEventListener('click', () => {
              const content = `
