@@ -281,6 +281,7 @@
         let currentFilename = "";
         let plotQuestions = [];
         let plotAnswers = [];
+        let currentQuestionIndex = 0;
 
         function showView(viewId) {
             allViews.forEach(view => view.classList.add('hidden'));
@@ -689,14 +690,20 @@
             promptInitialSave();
         });
         
-        function promptInitialSave() {
-            const defaultFilename = "novel_plot.txt";
+        function promptInitialSave(isPlotMode = false) {
+            const title = isPlotMode ? "플롯 저장" : "새 스토리 저장";
+            const description = isPlotMode 
+                ? "플롯 작성을 시작하기 전에 작업 파일을 저장합니다. 파일명을 입력해주세요."
+                : "새로운 이야기를 시작하기 전에 작업 파일을 저장합니다. 파일명을 입력해주세요.";
+            const buttonText = isPlotMode ? "저장하고 플롯 작성 시작" : "저장하고 시작";
+            const callback = isPlotMode ? "executeInitialSaveAndStart(true)" : "executeInitialSaveAndStart(false)";
+
             const content = `
-                <h3 class="text-xl font-bold mb-4 text-center">새 스토리 저장</h3>
-                <p class="text-center text-gray-600 mb-4">새로운 이야기를 시작하기 전에 작업 파일을 저장합니다. 파일명을 입력해주세요.</p>
-                <input id="initial-filename-input" type="text" class="w-full p-2 border rounded-md mb-6" value="${defaultFilename}">
+                <h3 class="text-xl font-bold mb-4 text-center">${title}</h3>
+                <p class="text-center text-gray-600 mb-4">${description}</p>
+                <input id="initial-filename-input" type="text" class="w-full p-2 border rounded-md mb-6" value="novel_plot.txt">
                 <div class="flex justify-center gap-4">
-                    <button onclick="executeInitialSaveAndStart()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">저장하고 시작</button>
+                    <button onclick="${callback}" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">${buttonText}</button>
                     <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
                 </div>
             `;
