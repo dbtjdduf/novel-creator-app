@@ -126,7 +126,7 @@
                         플롯 작성하기
                     </button>
                     <button id="start-button" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl">
-                        이세계로 출발
+                        바로 시작하기
                     </button>
                 </div>
             </div>
@@ -152,7 +152,7 @@
                      <h3 class="text-lg font-semibold mb-3 text-center text-gray-700">다음 화 내용 직접 입력하기</h3>
                      <p class="text-center text-gray-500 mb-4">다음 화의 줄거리를 직접 작성하여 스토리를 이어가세요.</p>
                      <div class="flex flex-col gap-2">
-                        <textarea id="custom-input" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" rows="3" placeholder="예: 주인공은 검술을 배우러 마을 도장을 찾아가 모두의 뚝배기를 깨버린다."></textarea>
+                        <textarea id="custom-input" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" rows="3" placeholder="예: 주인공은 기초 검술을 배우기 위해 마을 도장을 찾아간다."></textarea>
                         <button id="custom-submit-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-md transition-colors self-center">
                             다음 화로 적용하기
                         </button>
@@ -703,7 +703,7 @@
             showModal(content);
         }
 
-        async function executeInitialSaveAndStart() {
+        async function executeInitialSaveAndStart(isPlotMode = false) {
             let filename = document.getElementById('initial-filename-input').value.trim();
             if (!filename) { filename = "novel_plot.txt"; }
             if (!filename.toLowerCase().endsWith('.txt')) { filename += '.txt'; }
@@ -717,14 +717,19 @@
                 if (checked.length > 0) { selectedOptions[key] = Array.from(checked).map(cb => cb.value); }
             }
             
+            let initialStory = "초기 설정: ";
+            for (const key in selectedOptions) { initialStory += `${selectedOptions[key].join('/')}, `; }
+            initialStory = initialStory.slice(0, -2) + ".";
+
+            if(isPlotMode) {
+                startPlottingWorkflow(initialStory);
+                return;
+            }
+            
             mainNav.classList.remove('hidden');
             showView('story-screen');
             
-            let initialStory = "초기 설정: ";
-            for (const key in selectedOptions) { initialStory += `${selectedOptions[key].join('/')}, `; }
-            initialStory = initialStory.slice(0, -2) + ". 이 설정으로 이야기가 시작됩니다.";
-
-            storyLog = [initialStory];
+            storyLog = [initialStory + " 이 설정으로 이야기가 시작됩니다."];
             expandedStories = {};
             storySummary = "";
             fullPlot = "";
@@ -1090,6 +1095,7 @@
             showAlert('세계관 설정이 적용 및 저장되었습니다.');
         });
 
+        // --- 줄거리 기반 스토리 생성 ---
         generateChapterButton.addEventListener('click', () => {
             if (generateChapterButton.disabled) return;
             const content = `
