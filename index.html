@@ -491,11 +491,6 @@
             return expectJson ? JSON.parse(text) : text;
         }
 
-        function handleChoice(choice) {
-            storyLog.push(choice);
-            updateStoryLog();
-            autoSave();
-        }
         
         function updateStoryLog() {
             storyLogDiv.innerHTML = '';
@@ -639,6 +634,12 @@
             autoSave();
         };
         
+        function handleChoice(choice) {
+            storyLog.push(choice);
+            updateStoryLog();
+            autoSave();
+        }
+
         startButton.addEventListener('click', () => {
              const selectedOptions = {};
             let hasSelection = false;
@@ -677,7 +678,7 @@
             currentFilename = filename;
 
             closeModal();
-
+            
             const selectedOptions = {};
             for (const key in setupOptions) {
                 const checked = document.querySelectorAll(`input[name="${key}"]:checked`);
@@ -964,7 +965,7 @@
 
 
         window.showExpansionOptions = (index) => {
-            const content = `<h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 연출 키워드</h3><p class="text-center text-gray-600 mb-4">이 장면에 추가하고 싶은 키워드나 요구사항을 입력하세요. (선택사항)</p><textarea id="expansion-keyword" class="w-full p-2 border rounded-md mb-6" rows="3" placeholder="예: 숨겨진 능력 발현, 새로운 인물 등장"></textarea><div class="flex justify-center gap-4"><button onclick="executeExpansion(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">부풀리기 실행</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
+            const content = `<h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 연출 키워드</h3><p class="text-center text-gray-600 mb-4">이 장면에 추가하고 싶은 키워드나 요구사항을 입력하세요. (선택사항)</p><textarea id="expansion-keyword" class="w-full p-2 border rounded-md mb-6" rows="3" placeholder="예: 숨겨진 능력 발현, 새로운 인물 등장&#10;1화의 이야기 시작부분은 사용자가 원하는대로 장문으로 넣어도 괜찮습니다."></textarea><div class="flex justify-center gap-4"><button onclick="executeExpansion(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">부풀리기 실행</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
             showModal(content);
         };
 
@@ -1279,4 +1280,5 @@
     </script>
 </body>
 </html>
+
 
