@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>양판소설 출판소 v.1</title>
+    
+    <!-- 홈 화면 앱 기능 추가 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0284c7">
+    <!-- // 홈 화면 앱 기능 추가 -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #09f;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .modal-content {
+            max-height: 80vh;
+        }
+        .nav-button {
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .nav-button.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+        }
+        .nav-button:not(.active) {
+            background-color: #e2e8f0; /* slate-200 */
+            color: #475569; /* slate-600 */
+        }
+        .nav-button:not(.active):hover {
+            background-color: #cbd5e1; /* slate-300 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <!-- Chosen Palette: Slate Gray & Sky Blue -->
+    <!-- Application Structure Plan: A 'Load from File' feature is added. The initial screen now has a 'Load' button which triggers a hidden file input. A FileReader reads the .txt file, and a robust parsing function using regular expressions extracts the full plot, summary, and all story logs (both summary and expanded versions). The application state is then fully restored, and the user is transitioned directly to the story creation view, ready to continue where they left off. -->
+    <!-- Visualization & Content Choices: A new "기존작업 불러오기" button is added to the setup screen. The core of this feature is the `parseAndLoadState` JavaScript function, which uses regex to reliably parse the structured .txt file. This approach is superior to simple splitting as it correctly handles missing sections (like summary or expanded text for some chapters). The user experience is seamless: click, select file, and the app is instantly restored. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <input type="file" id="file-loader" class="hidden" accept=".txt">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">양판소설 출판소 v.1</h1>
+            <p class="text-lg text-gray-600 mt-2">designed by 유성열</p>
+        </header>
+
+        <!-- Generic Modal -->
+        <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+            <div id="modal-content-area" class="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-md md:max-w-3xl modal-content overflow-y-auto">
+                <!-- Modal content will be injected here -->
+            </div>
+        </div>
+
+        <nav id="main-nav" class="hidden mb-6 flex flex-wrap justify-center gap-4">
+            <button onclick="showView('story-screen')" class="nav-button active">스토리 제작</button>
+            <button onclick="showView('archive-screen')" class="nav-button">기록 보관소</button>
+            <button onclick="showView('character-screen')" class="nav-button">캐릭터 요약</button>
+            <button onclick="showView('setting-screen')" class="nav-button">설정</button>
+        </nav>
+
+        <!-- 초기 설정 화면 -->
+        <main id="setup-screen">
+             <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="text-center mb-8">
+                    <button id="load-button" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl w-full max-w-xs mx-auto">
+                        기존작업 불러오기
+                    </button>
+                </div>
+                <div class="flex items-center text-center my-6">
+                    <hr class="flex-grow border-gray-300">
+                    <span class="mx-4 text-gray-500 font-semibold">또는</span>
+                    <hr class="flex-grow border-gray-300">
+                </div>
+
+                <h2 class="text-2xl font-bold mb-6 text-center">새로운 스토리 시작하기</h2>
+                <p class="text-center text-gray-500 mb-6 -mt-4">(다중 선택 가능)</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-700">1. 대표 장르</h3>
+                        <div id="main-genre-options" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-700">2. 세부 장르</h3>
+                        <div id="sub-genre-options" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+                     <div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-700">3. 주인공 타입</h3>
+                        <div id="protagonist-type-options" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-700">4. 주인공 초기 특성</h3>
+                        <div id="protagonist-trait-options" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-700">5. 세계관 배경</h3>
+                        <div id="world-bg-options" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-gray-700">6. 핵심 시스템</h3>
+                        <div id="world-system-options" class="grid grid-cols-3 gap-2"></div>
+                    </div>
+                </div>
+                <div class="mt-10 text-center flex flex-col sm:flex-row justify-center gap-4">
+                     <button id="start-plot-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl">
+                        플롯 작성하기
+                    </button>
+                    <button id="start-button" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl">
+                        바로 시작하기
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 스토리 진행 화면 -->
+        <main id="story-screen" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-4 text-center border-b pb-4">스토리</h2>
+                <p id="summary-status" class="text-center text-sm text-sky-600 mb-4 hidden"></p>
+                <div id="story-log" class="min-h-[150px] bg-gray-50 p-4 rounded-md border mb-6 space-y-2 text-gray-700"></div>
+
+                <div class="text-center my-6 flex justify-center gap-4">
+                     <button id="edit-story-button" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg">
+                        스토리 수정하기
+                    </button>
+                    <button id="expand-story-button" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg">
+                        스토리 부풀리기
+                    </button>
+                </div>
+
+                <div class="border-y py-6 mb-6">
+                     <h3 class="text-lg font-semibold mb-3 text-center text-gray-700">다음 화 내용 직접 입력하기</h3>
+                     <p class="text-center text-gray-500 mb-4">다음 화의 줄거리를 직접 작성하여 스토리를 이어가세요.</p>
+                     <div class="flex flex-col gap-2">
+                        <textarea id="custom-input" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500" rows="3" placeholder="예: 주인공은 기초 검술을 배우기 위해 마을 도장을 찾아간다."></textarea>
+                        <button id="custom-submit-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-md transition-colors self-center">
+                            다음 화로 적용하기
+                        </button>
+                     </div>
+                </div>
+                
+                <div class="text-center my-6">
+                    <button id="generate-chapter-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                        줄거리 기반 스토리 생성하기
+                    </button>
+                </div>
+
+                <div class="mt-10 flex flex-wrap justify-center items-center gap-4 border-t pt-6">
+                    <button id="generate-full-plot-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg hidden">
+                        전체 스토리 생성/확인
+                    </button>
+                     <button id="summarize-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-lg">
+                        현재까지 내용 요약하기
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 기록 보관소 화면 -->
+        <main id="archive-screen" class="hidden">
+             <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-6 text-center border-b pb-4">기록 보관소</h2>
+                <div id="archive-content">
+                    <div class="mb-8">
+                        <div class="flex items-center mb-4 cursor-pointer" onclick="toggleArchiveSection('archive-full-plot-content', 'toggle-archive-plot')">
+                            <button id="toggle-archive-plot" class="text-sky-600 hover:text-sky-800 font-bold w-6 mr-2 flex-shrink-0 text-left">[-]</button>
+                            <h3 class="text-xl font-semibold text-gray-800">전체 줄거리</h3>
+                        </div>
+                        <div id="archive-full-plot-content" class="whitespace-pre-wrap bg-gray-50 p-4 rounded-md border min-h-[100px]"></div>
+                    </div>
+                    <div>
+                         <div class="flex items-center mb-4 cursor-pointer" onclick="toggleArchiveSection('archive-story-log-content', 'toggle-archive-log')">
+                            <button id="toggle-archive-log" class="text-sky-600 hover:text-sky-800 font-bold w-6 mr-2 flex-shrink-0 text-left">[-]</button>
+                            <h3 class="text-xl font-semibold text-gray-800">상세 스토리</h3>
+                        </div>
+                        <div id="archive-story-log-content" class="bg-gray-50 p-4 rounded-md border space-y-4 min-h-[200px]"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 캐릭터 요약 화면 -->
+        <main id="character-screen" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex justify-between items-center border-b pb-4 mb-6">
+                    <h2 class="text-2xl font-bold">캐릭터 요약</h2>
+                    <button id="add-character-choice-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                        새 캐릭터 추가
+                    </button>
+                </div>
+                <div id="character-list" class="space-y-6">
+                    <!-- 캐릭터 카드들이 여기에 추가됩니다. -->
+                </div>
+            </div>
+        </main>
+        
+        <!-- 설정 화면 -->
+        <main id="setting-screen" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-4 text-center border-b pb-4">이야기 설정</h2>
+                <p class="text-center text-gray-500 mb-6">AI가 반드시 따라야 할 핵심 규칙, 설정, 문체 등을 자유롭게 입력하세요. <br>이 내용은 모든 AI 작업에 최우선으로 반영됩니다.</p>
+                <textarea id="world-setting-input" class="w-full p-4 border rounded-md" rows="15" placeholder="예시)&#10;- 빨간 포션: 1레벨 이상 사용 가능. 체력 50 회복.&#10;- 하얀 포션: 50레벨 이상 사용 가능. 모든 상태이상 해제.&#10;- 이 세계의 모든 드래곤은 인간에게 적대적이다.&#10;- 문체는 간결하고 건조하게 유지해주세요."></textarea>
+                <div class="mt-6 text-center">
+                    <button id="save-setting-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md">
+                        설정 적용하기
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // DOM Elements
+        const setupScreen = document.getElementById('setup-screen');
+        const storyScreen = document.getElementById('story-screen');
+        const archiveScreen = document.getElementById('archive-screen');
+        const characterScreen = document.getElementById('character-screen');
+        const settingScreen = document.getElementById('setting-screen');
+        const mainNav = document.getElementById('main-nav');
+        const startButton = document.getElementById('start-button');
+        const startPlotButton = document.getElementById('start-plot-button');
+        const loadButton = document.getElementById('load-button');
+        const fileLoader = document.getElementById('file-loader');
+        const storyLogDiv = document.getElementById('story-log');
+        const customInput = document.getElementById('custom-input');
+        const customSubmitButton = document.getElementById('custom-submit-button');
+        const expandStoryButton = document.getElementById('expand-story-button');
+        const editStoryButton = document.getElementById('edit-story-button');
+        const summarizeButton = document.getElementById('summarize-button');
+        const generateFullPlotButton = document.getElementById('generate-full-plot-button');
+        const generateChapterButton = document.getElementById('generate-chapter-button');
+        const addCharacterChoiceButton = document.getElementById('add-character-choice-button');
+        const characterListDiv = document.getElementById('character-list');
+        const worldSettingInput = document.getElementById('world-setting-input');
+        const saveSettingButton = document.getElementById('save-setting-button');
+        const modal = document.getElementById('modal');
+        const modalContentArea = document.getElementById('modal-content-area');
+        const summaryStatus = document.getElementById('summary-status');
+
+        const allViews = [setupScreen, storyScreen, archiveScreen, characterScreen, settingScreen];
+        
+        const setupOptions = {
+            'main-genre': { elementId: 'main-genre-options', options: ['판타지', '무협', '현대판타지', '로맨스 판타지', 'SF', '게임', '아포칼립스', '대체역사', '사용자 지정'] },
+            'sub-genre': { elementId: 'sub-genre-options', options: ['정통', '퓨전', '아카데미물', '성좌물', '탑등반물', '헌터물', '영지물', '생존물', '사용자 지정'] },
+            'protagonist-type': { elementId: 'protagonist-type-options', options: ['회귀자', '환생자', '빙의자', '시한부', '고인물', '악역/빌런', '망나니', '낙오자/F급', '사용자 지정'] },
+            'protagonist-trait': { elementId: 'protagonist-trait-options', options: ['상태창', '압도적 재능', '미래/공략 지식', '천재적 두뇌', '노력파', '가문/금수저', '흙수저/밑바닥', '특이 체질', '사용자 지정'] },
+            'world-bg': { elementId: 'world-bg-options', options: ['중세 판타지', '동양풍/무림', '현대 지구', '포스트 아포칼립스', '가상현실 게임', '우주/SF', '마법과 과학 공존', '고대/신화', '사용자 지정'] },
+            'world-system': { elementId: 'world-system-options', options: ['마법/마나', '무공/내공', '신성력/권능', '초능력/이능', '던전/게이트', '정령/소환수', '아이템/아티팩트', '연금술/제작', '사용자 지정'] }
+        };
+
+        let storyLog = [];
+        let expandedStories = {};
+        let storySummary = "";
+        let fullPlot = "";
+        let logNotes = {};
+        let characters = [];
+        let tempAICharacters = [];
+        let tempGeneratedChapters = [];
+        let tempPlotOutlines = [];
+        let logFoldStates = {};
+        let worldSettings = "";
+        let currentFilename = "";
+        let plotQuestions = [];
+        let plotAnswers = [];
+        let currentQuestionIndex = 0;
+
+        function showView(viewId) {
+            allViews.forEach(view => view.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+
+            const buttons = document.querySelectorAll('.nav-button');
+            buttons.forEach(button => {
+                button.classList.remove('active');
+                if (button.getAttribute('onclick').includes(viewId)) {
+                    button.classList.add('active');
+                }
+            });
+
+            if (viewId === 'archive-screen') populateArchive();
+            if (viewId === 'character-screen') renderCharacterScreen();
+        }
+
+        function populateArchive() {
+            const plotDiv = document.getElementById('archive-full-plot-content');
+            const logDiv = document.getElementById('archive-story-log-content');
+
+            plotDiv.textContent = fullPlot || "- 전체 줄거리가 아직 정해지지 않았습니다. -";
+            logDiv.innerHTML = '';
+
+            if (storyLog.length === 0) {
+                logDiv.textContent = "- 아직 기록된 스토리가 없습니다. -";
+                return;
+            }
+
+            storyLog.forEach((entry, index) => {
+                const entryWrapper = document.createElement('div');
+                entryWrapper.className = "py-1";
+
+                const summaryLine = document.createElement('div');
+                summaryLine.className = "flex items-start justify-between group";
+
+                const summaryContent = document.createElement('div');
+                summaryContent.className = "flex-grow flex items-start";
+
+                const toggleContainer = document.createElement('div');
+                toggleContainer.className = "w-6 mr-2 flex-shrink-0 text-left";
+
+                if (expandedStories[index]) {
+                    const toggleButton = document.createElement('button');
+                    toggleButton.id = `archive-toggle-btn-${index}`;
+                    toggleButton.className = "text-sky-600 hover:text-sky-800 font-bold";
+                    toggleButton.onclick = () => toggleArchiveDetails(index);
+                    toggleContainer.appendChild(toggleButton);
+                }
+
+                summaryContent.appendChild(toggleContainer);
+
+                const p = document.createElement('p');
+                p.innerHTML = `<strong class="font-semibold text-gray-800">${index + 1}. ${entry}</strong>`;
+                summaryContent.appendChild(p);
+                summaryLine.appendChild(summaryContent);
+                entryWrapper.appendChild(summaryLine);
+
+                if (logNotes[index]) {
+                    const noteP = document.createElement('p');
+                    noteP.textContent = `➥ ${logNotes[index]}`;
+                    noteP.className = "text-sm text-indigo-600 italic pl-8 ml-1 mt-1";
+                    entryWrapper.appendChild(noteP);
+                }
+
+                if (expandedStories[index]) {
+                    const expandedP = document.createElement('p');
+                    expandedP.id = `archive-details-${index}`;
+                    expandedP.textContent = expandedStories[index];
+                    expandedP.className = "text-sm text-gray-600 pl-8 ml-1 mt-1 border-l-2 border-sky-200 whitespace-pre-wrap";
+                    entryWrapper.appendChild(expandedP);
+                }
+                logDiv.appendChild(entryWrapper);
+                
+                const isFolded = logFoldStates[index] === true;
+                const detailsP = document.getElementById(`archive-details-${index}`);
+                const toggleBtn = document.getElementById(`archive-toggle-btn-${index}`);
+                if(detailsP && toggleBtn) {
+                    detailsP.classList.toggle('hidden', isFolded);
+                    toggleBtn.textContent = isFolded ? '[+]' : '[-]';
+                }
+            });
+        }
+        
+        window.toggleArchiveDetails = (index) => {
+            const detailsP = document.getElementById(`archive-details-${index}`);
+            const toggleBtn = document.getElementById(`archive-toggle-btn-${index}`);
+            if (detailsP && toggleBtn) {
+                const isHidden = detailsP.classList.toggle('hidden');
+                toggleBtn.textContent = isHidden ? '[+]' : '[-]';
+                logFoldStates[index] = isHidden;
+                autoSave();
+            }
+        };
+
+        function showLoaderModal(message = "AI가 생각 중입니다...") {
+            const content = `
+                <div class="flex flex-col items-center justify-center p-8">
+                    <div class="spinner"></div>
+                    <p class="mt-4 text-gray-600 text-center">${message}</p>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        function showModal(contentHtml) {
+            modalContentArea.innerHTML = contentHtml;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+        }
+
+        function showAlert(message) {
+            const content = `<p class="mb-6 text-lg text-gray-800 text-center">${message}</p><div class="text-center"><button onclick="closeModal()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg transition-colors">확인</button></div>`;
+            showModal(content);
+        }
+
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+        function renderSetupOptions() {
+            for (const key in setupOptions) {
+                const category = setupOptions[key];
+                const container = document.getElementById(category.elementId);
+                category.options.forEach((option, index) => {
+                    const optionId = `${key}-${index}`;
+                    const div = document.createElement('div');
+                    let clickHandler = '';
+                    if (option === '사용자 지정') {
+                        clickHandler = `onclick="promptForCustomOption(event, '${key}', '${optionId}')"`;
+                    }
+                    div.innerHTML = `<input type="checkbox" id="${optionId}" name="${key}" value="${option}" class="hidden peer" ${clickHandler}><label id="label-${optionId}" for="${optionId}" class="block w-full text-center p-3 border rounded-lg cursor-pointer text-sm peer-checked:bg-sky-500 peer-checked:text-white peer-checked:border-sky-500 hover:bg-gray-100 transition-colors">${option}</label>`;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        window.promptForCustomOption = (event, key, optionId) => {
+            const checkbox = document.getElementById(optionId);
+            if (!checkbox.checked) {
+                const label = document.getElementById(`label-${optionId}`);
+                checkbox.value = '사용자 지정';
+                label.textContent = '사용자 지정';
+                return;
+            }
+            event.preventDefault(); 
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">사용자 지정 입력</h3>
+                <p class="text-center text-gray-600 mb-4">원하는 설정을 직접 입력하세요.</p>
+                <input id="custom-option-input" type="text" class="w-full p-2 border rounded-md mb-6" placeholder="예: 빙의했더니 엑스트라">
+                <div class="flex justify-center gap-4">
+                    <button onclick="saveCustomOption('${optionId}')" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">확인</button>
+                    <button onclick="closeModal(); document.getElementById('${optionId}').checked=false;" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        window.saveCustomOption = (optionId) => {
+            const checkbox = document.getElementById(optionId);
+            const label = document.getElementById(`label-${optionId}`);
+            const input = document.getElementById('custom-option-input');
+            const value = input.value.trim();
+
+            if (value) {
+                checkbox.value = value;
+                label.textContent = `지정: ${value}`;
+                checkbox.checked = true;
+                closeModal();
+            } else {
+                checkbox.checked = false;
+                closeModal();
+            }
+        }
+        
+        async function callGeminiAPI(prompt, { expectJson = false, task = 'choice' } = {}) {
+            const apiKey = "AIzaSyAcFrrcZU3z8sRPWhQ3SLNFh3OGdoeV2xA";
+            if (apiKey === "여기에_AI_스튜디오에서_발급받은_API_키를_붙여넣으세요") {
+                throw new Error("API 키가 설정되지 않았습니다. 스크립트에서 API 키를 입력해주세요.");
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const systemPrompts = {
+                choice: `당신은 개연성과 설정을 중시하는 웹소설 작가 겸 감독입니다. 주어진 세계관 설정, 전체 줄거리, 그리고 현재까지의 이야기 흐름을 모두 고려하여, '바로 다음'에 일어날 가장 자연스러운 사건 선택지 3개를 제안해야 합니다. 절대로 갑작스럽게 스토리를 비약시키거나, 주어진 세계관 설정을 위반하는 내용을 만들면 안 됩니다. (예: 1레벨 캐릭터가 50레벨 포션을 사용). 주인공의 현재 상황과 능력에 맞는 점진적인 성장을 보여주는 선택지를 제시해야 합니다. 또한, 단순히 다음 사건만 생각하지 말고, 때로는 다른 인물의 시점으로 전환하거나, 짧은 시간 점프를 제안하는 등 감독의 시점에서 서사의 흐름을 풍부하게 만들 수 있는 다양한 선택지를 고려해야 합니다. 사용자의 연출 방향이 주어지면 그 내용을 최우선으로 반영하되, 개연성을 해치지 않는 선에서 적용해야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`,
+                expansion: `당신은 뛰어난 웹소설 작가입니다. 주어진 세계관 설정과 이야기의 맥락, 그리고 사용자의 연출 요구사항을 파악하여, 한 편의 완성도 높은 장면으로 만들어주세요. 장면을 묘사할 때, 등장인물의 심리를 보여주는 '독백', 관계와 스토리를 진전시키는 '캐릭터 간의 대화'를 적극적으로 추가해주세요. 필요하다면 '쿵!', '스르륵' 같은 '의성어/의태어'를 사용하여 생동감을 더해주세요. 특히 대화의 비중을 높여 이야기가 지루하지 않게 만들어야 합니다. 세계관 설정을 반드시 준수해야 합니다.`,
+                summary: `당신은 웹소설 전문 편집자입니다. 주어진 줄거리 전체를 분석하여, 핵심 설정, 주요 등장인물, 그리고 지금까지 일어난 핵심 사건들을 간결하게 요약해주세요. 이 요약본은 AI가 앞으로의 이야기를 쓸 때 참고할 자료이므로, 맥락을 이해하는 데 중요한 정보는 빠뜨리지 마세요.`,
+                plot_generation: `당신은 유능한 웹소설 기획자입니다. 주어진 세계관 설정과 소설의 상세한 1화 내용을 바탕으로, 앞으로 펼쳐질 이야기의 전체 줄거리(시놉시스)를 작성해주세요. **도입(기), 전개(승), 위기(전), 절정(결), 에필로그** 구조에 따라 핵심 사건들을 순서대로 나열하여 흥미로운 이야기의 뼈대를 만들어주세요. 세계관 설정을 반드시 준수해야 합니다.`,
+                plot_question_generation: `당신은 세계적인 소설 기획자입니다. 주어진 초기 설정을 바탕으로, 흥미로운 소설 플롯을 완성하기 위해 작가에게 물어봐야 할 가장 핵심적인 질문 10-15개를 생성해주세요. 질문은 주인공, 라이벌, 세계관, 핵심 갈등, 최종 목표, 그리고 원하는 결말의 분위기를 포함해야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`,
+                plot_outline_generation: `당신은 천재적인 스토리 작가입니다. 주어진 초기 설정과 작가의 상세한 답변들을 종합하여, 이 모든 요소를 만족시키는 흥미로운 전체 줄거리(시놉시스)를 2~3가지 버전으로 창작해주세요. 각 줄거리는 기승전결 구조를 따라야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`,
+                chapter_summary_generation: `당신은 꼼꼼한 편집자입니다. 주어진 전체 줄거리(시놉시스)를 분석하여, 이 이야기를 약 50~100화 분량의 웹소설로 만들기 위한 각 화의 '한 줄 요약' 목록을 생성해주세요. 각 요약은 해당 화의 핵심 사건을 담고 있어야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`,
+                chapter_generation: `당신은 유능한 웹소설 작가입니다. 주어진 세계관 설정, 전체 줄거리, 현재까지의 이야기, 그리고 목표 플롯 지점을 모두 참고하여, 현재 시점에서 목표 지점으로 이야기를 매끄럽게 연결하는 완성된 한 편의 소설(약 4000~5000자 분량)과 그 내용을 한 문장으로 요약한 'summary'를 함께 생성해야 합니다. 단순히 요약하는 것이 아니라, 상세한 묘사, 풍부한 대화, 인물의 심리 등을 포함한 완성된 '화(chapter)'를 써야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`,
+                character_generation: `당신은 통찰력 있는 소설 편집자입니다. 주어진 세계관 설정과 스토리 전체 내용을 분석하여, 아직 프로필이 작성되지 않은 인물 중 비중이 크다고 생각되는 캐릭터를 최대 3명까지 찾아내어 프로필을 작성해주세요. 캐릭터의 작중 행적, 대사, 역할을 기반으로 성격, 외모, 배경 설정을 추론하여 채워야 합니다. 세계관 설정을 반드시 준수해야 합니다. 답변은 반드시 JSON 배열 형식이어야 합니다.`
+            };
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompts[task] }] }
+            };
+
+            if (expectJson && task === 'chapter_generation') {
+                 payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "summary": { "type": "STRING" },
+                                "full_text": { "type": "STRING" }
+                            }
+                        }
+                    }
+                };
+            } else if (expectJson && task === 'character_generation') {
+                 payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: { "profile": { type: "OBJECT", properties: { "이름": { "type": "STRING" }, "성별/종족": { "type": "STRING" }, "외모": { "type": "STRING" }, "설정": { "type": "STRING" } } } }
+                        }
+                    }
+                };
+            } else if (expectJson) {
+                payload.generationConfig = { responseMimeType: "application/json", responseSchema: { type: "ARRAY", items: { type: "STRING" } } };
+            }
+
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) {
+                const errorBody = await response.json();
+                console.error("API Error Body:", errorBody);
+                throw new Error(`API Error: ${response.status} ${response.statusText}`);
+            }
+            const result = await response.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error("API 응답이 비어있습니다.");
+            return expectJson ? JSON.parse(text) : text;
+        }
+        
+        function updateStoryLog() {
+            storyLogDiv.innerHTML = '';
+            storyLog.forEach((entry, index) => {
+                const entryWrapper = document.createElement('div');
+                entryWrapper.className = "py-1";
+
+                const summaryLine = document.createElement('div');
+                summaryLine.className = "flex items-start justify-between group";
+
+                const summaryContent = document.createElement('div');
+                summaryContent.className = "flex-grow flex items-start";
+
+                const toggleContainer = document.createElement('div');
+                toggleContainer.className = "w-6 mr-2 flex-shrink-0 text-left";
+
+                if (expandedStories[index]) {
+                    const toggleButton = document.createElement('button');
+                    toggleButton.id = `toggle-btn-${index}`;
+                    toggleButton.className = "text-sky-600 hover:text-sky-800 font-bold";
+                    toggleButton.onclick = () => toggleDetails(index);
+                    toggleContainer.appendChild(toggleButton);
+                }
+                
+                summaryContent.appendChild(toggleContainer);
+
+                const p = document.createElement('p');
+                p.textContent = `${index + 1}. ${entry}`;
+                p.className = "whitespace-pre-wrap cursor-pointer hover:text-sky-600";
+                p.onclick = () => showLogNoteEditor(index);
+                summaryContent.appendChild(p);
+
+                summaryLine.appendChild(summaryContent);
+
+                if (index > 0) {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '삭제';
+                    deleteButton.className = "ml-4 text-red-500 hover:text-red-700 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0";
+                    deleteButton.onclick = () => showDeleteConfirmation(index);
+                    summaryLine.appendChild(deleteButton);
+                }
+                
+                entryWrapper.appendChild(summaryLine);
+
+                if (logNotes[index]) {
+                    const noteP = document.createElement('p');
+                    noteP.textContent = `➥ ${logNotes[index]}`;
+                    noteP.className = "text-sm text-indigo-600 italic pl-8 ml-1 mt-1";
+                    entryWrapper.appendChild(noteP);
+                }
+
+                if (expandedStories[index]) {
+                    const expandedP = document.createElement('p');
+                    expandedP.id = `details-${index}`;
+                    expandedP.textContent = expandedStories[index];
+                    expandedP.className = "text-sm text-gray-600 pl-8 ml-1 mt-1 border-l-2 border-sky-200 whitespace-pre-wrap";
+                    entryWrapper.appendChild(expandedP);
+                }
+                storyLogDiv.appendChild(entryWrapper);
+
+                const isFolded = logFoldStates[index] === true;
+                const detailsP = document.getElementById(`details-${index}`);
+                const toggleBtn = document.getElementById(`toggle-btn-${index}`);
+                if(detailsP && toggleBtn) {
+                    detailsP.classList.toggle('hidden', isFolded);
+                    toggleBtn.textContent = isFolded ? '[+]' : '[-]';
+                }
+            });
+            storyLogDiv.scrollTop = storyLogDiv.scrollHeight;
+        }
+
+        window.toggleDetails = (index) => {
+            const detailsP = document.getElementById(`details-${index}`);
+            const toggleBtn = document.getElementById(`toggle-btn-${index}`);
+            if (detailsP && toggleBtn) {
+                const isHidden = detailsP.classList.toggle('hidden');
+                toggleBtn.textContent = isHidden ? '[+]' : '[-]';
+                logFoldStates[index] = isHidden;
+                autoSave();
+            }
+        };
+
+        window.toggleArchiveSection = (contentId, buttonId) => {
+            const contentDiv = document.getElementById(contentId);
+            const toggleBtn = document.getElementById(buttonId);
+            if (contentDiv && toggleBtn) {
+                if (contentDiv.classList.toggle('hidden')) {
+                    toggleBtn.textContent = '[+]';
+                } else {
+                    toggleBtn.textContent = '[-]';
+                }
+            }
+        };
+
+        window.showLogNoteEditor = (index) => {
+            const currentNote = logNotes[index] || "";
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 한 줄 요약</h3>
+                <p class="text-center text-gray-600 mb-4">이 화의 핵심 내용이나 메시지를 기록하세요.</p>
+                <input id="log-note-input" type="text" class="w-full p-2 border rounded-md mb-6" value="${currentNote}" placeholder="예: 주인공의 각성을 암시하는 복선 등장">
+                <div class="flex justify-center gap-4">
+                    <button onclick="saveLogNote(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">저장</button>
+                    <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        };
+
+        window.saveLogNote = (index) => {
+            const noteText = document.getElementById('log-note-input').value.trim();
+            if (noteText) {
+                logNotes[index] = noteText;
+            } else {
+                delete logNotes[index];
+            }
+            closeModal();
+            updateStoryLog();
+            autoSave();
+        };
+        
+        window.showDeleteConfirmation = (index) => {
+            const content = `<p class="text-center mb-6">정말로 ${index + 1}화부터 그 이후의 모든 내용을 삭제하시겠습니까?<br>이 작업은 되돌릴 수 없습니다.</p><div class="flex justify-center gap-4"><button onclick="confirmDeleteLog(${index})" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg">삭제</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
+            showModal(content);
+        };
+
+        window.confirmDeleteLog = async (index) => {
+            closeModal();
+            storyLog.splice(index);
+            Object.keys(expandedStories).forEach(key => { if (key >= index) delete expandedStories[key]; });
+            Object.keys(logNotes).forEach(key => { if (key >= index) delete logNotes[key]; });
+            for (let i = index; i < storyLog.length + 1; i++) {
+                if (logFoldStates.hasOwnProperty(i)) {
+                    delete logFoldStates[i];
+                }
+            }
+            storySummary = "";
+            fullPlot = "";
+            summaryStatus.classList.add('hidden');
+            generateFullPlotButton.classList.add('hidden');
+            generateChapterButton.disabled = true;
+            updateStoryLog();
+            autoSave();
+        };
+        
+        function handleChoice(choice) {
+            storyLog.push(choice);
+            updateStoryLog();
+            autoSave();
+        }
+
+        startButton.addEventListener('click', () => {
+             const selectedOptions = {};
+            let hasSelection = false;
+            for (const key in setupOptions) {
+                const checked = document.querySelectorAll(`input[name="${key}"]:checked`);
+                if (checked.length > 0) {
+                    hasSelection = true;
+                }
+            }
+            if (!hasSelection) {
+                showAlert('하나 이상의 초기 설정을 선택해주세요!');
+                return;
+            }
+            promptInitialSave(false);
+        });
+        
+        function promptInitialSave(isPlotMode = false) {
+            const title = isPlotMode ? "플롯 저장" : "새 스토리 저장";
+            const description = isPlotMode 
+                ? "플롯 작성을 시작하기 전에 작업 파일을 저장합니다. 파일명을 입력해주세요."
+                : "새로운 이야기를 시작하기 전에 작업 파일을 저장합니다. 파일명을 입력해주세요.";
+            const buttonText = isPlotMode ? "저장하고 플롯 작성 시작" : "저장하고 시작";
+            const callback = isPlotMode ? "executeInitialSaveAndStart(true)" : "executeInitialSaveAndStart(false)";
+
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">${title}</h3>
+                <p class="text-center text-gray-600 mb-4">${description}</p>
+                <input id="initial-filename-input" type="text" class="w-full p-2 border rounded-md mb-6" value="novel_plot.txt">
+                <div class="flex justify-center gap-4">
+                    <button onclick="${callback}" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">${buttonText}</button>
+                    <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        async function executeInitialSaveAndStart(isPlotMode = false) {
+            let filename = document.getElementById('initial-filename-input').value.trim();
+            if (!filename) { filename = "novel_plot.txt"; }
+            if (!filename.toLowerCase().endsWith('.txt')) { filename += '.txt'; }
+            currentFilename = filename;
+
+            closeModal();
+
+            const selectedOptions = {};
+            for (const key in setupOptions) {
+                const checked = document.querySelectorAll(`input[name="${key}"]:checked`);
+                if (checked.length > 0) { selectedOptions[key] = Array.from(checked).map(cb => cb.value); }
+            }
+            
+            let initialStory = "초기 설정: ";
+            for (const key in selectedOptions) { initialStory += `${selectedOptions[key].join('/')}, `; }
+            initialStory = initialStory.slice(0, -2) + ".";
+            
+            storyLog = [initialStory + " 이 설정으로 이야기가 시작됩니다."];
+            expandedStories = {};
+            storySummary = "";
+            fullPlot = "";
+            logNotes = {};
+            characters = [];
+            logFoldStates = {};
+            worldSettings = "";
+            worldSettingInput.value = "";
+            generateFullPlotButton.classList.add('hidden');
+            generateChapterButton.disabled = true;
+
+            if(isPlotMode) {
+                startPlottingWorkflow(initialStory);
+                return;
+            }
+            
+            mainNav.classList.remove('hidden');
+            showView('story-screen');
+            updateStoryLog();
+            autoSave(true);
+        }
+
+        loadButton.addEventListener('click', () => {
+            fileLoader.click();
+        });
+
+        fileLoader.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) { return; }
+            currentFilename = file.name;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const content = event.target.result;
+                    parseAndLoadState(content);
+                } catch (err) {
+                    showAlert('파일을 읽는 도중 오류가 발생했습니다: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+
+        function parseAndLoadState(content) {
+            let tempLog = [], tempExpanded = {}, tempPlot = "", tempSummary = "", tempNotes = {}, tempChars = [], tempFoldStates = {}, tempWorldSettings = "";
+            
+            const plotMatch = content.match(/\[전체 줄거리\]\n([\s\S]*?)\n\n================================/);
+            if (plotMatch && plotMatch[1].trim() !== "- 전체 줄거리가 아직 정해지지 않았습니다. -") {
+                tempPlot = plotMatch[1].trim();
+            }
+
+            const summaryMatch = content.match(/\[AI용 내용 요약본\]\n([\s\S]*?)\n\n================================/);
+            if (summaryMatch) { tempSummary = summaryMatch[1].trim(); }
+            
+            const foldStateMatch = content.match(/\[UI 상태\]\n([\s\S]*?)\n\n================================/);
+            if(foldStateMatch) {
+                try { tempFoldStates = JSON.parse(foldStateMatch[1]); } catch(e) { console.error("UI 상태 파싱 오류:", e); }
+            }
+            
+            const worldSettingMatch = content.match(/\[세계관 설정\]\n([\s\S]*?)\n\n================================/);
+            if (worldSettingMatch) { tempWorldSettings = worldSettingMatch[1].trim(); }
+
+            const charMatch = content.match(/\[캐릭터 정보\]\n([\s\S]*?)\n\n================================/);
+            if(charMatch) {
+                try { tempChars = JSON.parse(charMatch[1]); } catch(e) { console.error("캐릭터 정보 파싱 오류:", e); }
+            }
+
+            const logRegex = /\[(\d+)화 요약\]\n([\s\S]*?)\n\n(?:\[\d+화 한 줄 요약\]\n([\s\S]*?)\n\n)?(?:\[\d+화 상세\]\n([\s\S]*?)\n\n--------------------------------\n\n)?/g;
+            let match;
+            while ((match = logRegex.exec(content)) !== null) {
+                const logIndex = parseInt(match[1], 10) - 1;
+                tempLog[logIndex] = match[2].trim();
+                if (match[3]) { tempNotes[logIndex] = match[3].trim(); }
+                if (match[4]) { tempExpanded[logIndex] = match[4].trim(); }
+            }
+
+            if (tempLog.length === 0) {
+                showAlert('유효한 스토리를 파일에서 찾을 수 없습니다.');
+                return;
+            }
+
+            storyLog = tempLog;
+            expandedStories = tempExpanded;
+            fullPlot = tempPlot;
+            storySummary = tempSummary;
+            logNotes = tempNotes;
+            characters = tempChars;
+            logFoldStates = tempFoldStates;
+            worldSettings = tempWorldSettings;
+            
+            mainNav.classList.remove('hidden');
+            showView('story-screen');
+            updateStoryLog();
+            worldSettingInput.value = worldSettings;
+
+            if (expandedStories[0]) { generateFullPlotButton.classList.remove('hidden'); }
+            if (fullPlot) generateChapterButton.disabled = false;
+            if (storySummary) {
+                summaryStatus.textContent = `✔ ${storyLog.length}화 까지의 요약본이 생성되어 AI의 배경지식으로 사용됩니다.`;
+                summaryStatus.classList.remove('hidden');
+            }
+            
+            showAlert(`'${currentFilename}' 작업을 성공적으로 불러왔습니다! 이제부터 이 파일에 자동 저장됩니다.`);
+        }
+        
+        customSubmitButton.addEventListener('click', () => {
+            const customText = customInput.value.trim();
+            if (customText) {
+                handleChoice(customText);
+                customInput.value = '';
+            }
+        });
+        
+        customInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') customSubmitButton.click(); });
+        
+        summarizeButton.addEventListener('click', async () => {
+            if (storyLog.length < 3) { showAlert('요약하기에는 이야기가 너무 짧습니다.'); return; }
+            showLoaderModal();
+            try {
+                let fullText = storyLog.map((entry, index) => `${index + 1}. ${entry}\n${expandedStories[index] ? `(상세 내용) ${expandedStories[index]}\n` : ''}`).join('');
+                const prompt = `다음은 웹소설의 전체 줄거리입니다. 이 내용을 요약해주세요:\n\n${fullText}`;
+                storySummary = await callGeminiAPI(prompt, { task: 'summary' });
+                summaryStatus.textContent = `✔ ${storyLog.length}화 까지의 요약본이 생성되어 AI의 배경지식으로 사용됩니다.`;
+                summaryStatus.classList.remove('hidden');
+                showAlert('스토리 요약이 완료되었습니다!');
+                autoSave();
+            } catch (error) {
+                showAlert(`오류 발생: ${error.message}`);
+            } finally {
+                closeModal();
+            }
+        });
+
+        generateFullPlotButton.addEventListener('click', () => {
+            if (fullPlot) {
+                showFullPlotChoiceModal(true);
+            } else {
+                 if (!expandedStories[0]) { showAlert('1화를 먼저 부풀려야 전체 스토리를 생성할 수 있습니다.'); return; }
+                showFullPlotChoiceModal(false);
+            }
+        });
+
+        function showFullPlotChoiceModal(hasExistingPlot) {
+            let content;
+            if (hasExistingPlot) {
+                content = `
+                    <h3 class="text-xl font-bold mb-4 text-center">전체 스토리</h3>
+                    <p class="text-center text-gray-600 mb-6">어떻게 하시겠습니까?</p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <button onclick="showFullPlotEditor(fullPlot)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full">기존 줄거리 확인/수정</button>
+                        <button onclick="generateAndShowAIPlot()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg w-full">AI로 새로 추천받기</button>
+                    </div>
+                `;
+            } else {
+                 content = `
+                    <h3 class="text-xl font-bold mb-4 text-center">전체 스토리 생성 방식 선택</h3>
+                    <p class="text-center text-gray-600 mb-6">어떻게 줄거리를 생성하시겠습니까?</p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <button onclick="showFullPlotEditor('')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full">직접 입력</button>
+                        <button onclick="generateAndShowAIPlot()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg w-full">AI 추천</button>
+                    </div>
+                `;
+            }
+            showModal(content);
+        }
+
+        async function generateAndShowAIPlot() {
+            closeModal();
+            showLoaderModal();
+            try {
+                const worldSettingInstruction = worldSettings ? `[세계관 핵심 설정]:\n${worldSettings}\n\n` : "";
+                const prompt = `${worldSettingInstruction}[소설의 1화 내용]:\n${expandedStories[0]}\n\n[요청]: 위 1화 내용을 바탕으로 소설의 전체 줄거리(시놉시스)를 작성해주세요.`;
+                const plot = await callGeminiAPI(prompt, { task: 'plot_generation'});
+                showAIPlotWithEditOption(plot);
+            } catch (error) {
+                 showAlert(`오류 발생: ${error.message}`);
+            }
+        }
+
+        function showAIPlotWithEditOption(plotText) {
+            const plotHtml = `<div class="whitespace-pre-wrap p-4 bg-gray-100 border rounded-md h-96 overflow-y-auto">${plotText}</div>`;
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">AI 추천 줄거리</h3>
+                ${plotHtml}
+                <div class="flex justify-center gap-4 mt-6">
+                    <button onclick="confirmFullPlot(true, \`${plotText.replace(/`/g, "\\`")}\`)" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">줄거리 확정</button>
+                    <button onclick="showFullPlotEditor(\`${plotText.replace(/`/g, "\\`")}\`)" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg">수정</button>
+                    <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
+        
+        window.showFullPlotEditor = (plotText = '') => {
+            closeModal();
+            const initialText = plotText || fullPlot || '';
+            const content = `<h3 class="text-xl font-bold mb-4 text-center">전체 스토리 편집</h3><textarea id="full-plot-textarea" class="w-full h-96 p-2 border rounded-md">${initialText}</textarea><div class="flex justify-center gap-4 mt-6"><button onclick="saveFullPlot()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">줄거리 확정</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
+            showModal(content);
+        };
+        
+        window.saveFullPlot = () => {
+            const newPlot = document.getElementById('full-plot-textarea').value;
+            confirmFullPlot(false, newPlot);
+        };
+
+        window.confirmFullPlot = (fromAI, plotText) => {
+            fullPlot = plotText;
+            generateChapterButton.disabled = !fullPlot;
+            closeModal();
+            showAlert('전체 줄거리가 저장되었습니다. 이제부터 AI는 이 줄거리를 따라갑니다.');
+            autoSave();
+        };
+
+        expandStoryButton.addEventListener('click', () => {
+            if (storyLog.length === 0) { showAlert('부풀릴 스토리가 없습니다.'); return; }
+            let listHtml = storyLog.map((log, index) => `<button onclick="showExpansionOptions(${index})" class="w-full text-left p-3 mb-2 border rounded-md hover:bg-gray-100">${index + 1}. ${log.substring(0, 50)}...${expandedStories[index] ? ' (부풀림)' : ''}</button>`).join('');
+            const content = `<h3 class="text-xl font-bold mb-4 text-center">부풀릴 화 선택</h3><div class="space-y-2">${listHtml}</div><div class="text-center mt-6"><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
+            showModal(content);
+        });
+
+        editStoryButton.addEventListener('click', () => {
+            if (storyLog.length === 0) { showAlert('수정할 스토리가 없습니다.'); return; }
+            let listHtml = storyLog.map((log, index) => 
+                `<button onclick="showLogEditor(${index})" class="w-full text-left p-3 mb-2 border rounded-md hover:bg-gray-100">${index + 1}. ${log.substring(0, 50)}...</button>`
+            ).join('');
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">수정할 화 선택</h3>
+                <div class="space-y-2">${listHtml}</div>
+                <div class="text-center mt-6">
+                    <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        });
+
+        window.showLogEditor = (index) => {
+            const logSummary = storyLog[index];
+            const logDetails = expandedStories[index] || "";
+            const summaryInputHtml = index === 0 
+                ? `<p class="w-full p-2 border rounded-md bg-gray-100 text-gray-500 cursor-not-allowed">${logSummary}</p>`
+                : `<input id="log-summary-edit" class="w-full p-2 border rounded-md" value="${logSummary}">`;
+            
+            const detailsTextareaHtml = expandedStories[index] !== undefined
+                ? `<h4 class="font-semibold mt-4 mb-2">상세 내용</h4>
+                   <textarea id="log-details-edit" class="w-full h-80 p-2 border rounded-md">${logDetails}</textarea>`
+                : '';
+
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 수정하기</h3>
+                <div>
+                    <h4 class="font-semibold mb-2">한 줄 요약</h4>
+                    ${summaryInputHtml}
+                    ${detailsTextareaHtml}
+                </div>
+                <div class="flex justify-center gap-4 mt-6">
+                    <button onclick="saveLogEdits(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">저장</button>
+                    <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        };
+
+        window.saveLogEdits = (index) => {
+            if (index > 0) {
+                const summaryInput = document.getElementById('log-summary-edit');
+                storyLog[index] = summaryInput.value;
+            }
+
+            const detailsTextarea = document.getElementById('log-details-edit');
+            if (detailsTextarea) {
+                expandedStories[index] = detailsTextarea.value;
+            }
+
+            closeModal();
+            updateStoryLog();
+            autoSave();
+            showAlert(`${index + 1}화가 수정되었습니다.`);
+        };
+
+
+        window.showExpansionOptions = (index) => {
+            const content = `<h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 연출 키워드</h3><p class="text-center text-gray-600 mb-4">이 장면에 추가하고 싶은 키워드나 요구사항을 입력하세요. (선택사항)</p><textarea id="expansion-keyword" class="w-full p-2 border rounded-md mb-6" rows="3" placeholder="예: 숨겨진 능력 발현, 새로운 인물 등장&#10;1화의 이야기 시작부분은 사용자가 원하는대로 장문으로 넣어도 괜찮습니다."></textarea><div class="flex justify-center gap-4"><button onclick="executeExpansion(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">부풀리기 실행</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
+            showModal(content);
+        };
+
+        window.executeExpansion = async (index) => {
+            const keyword = document.getElementById('expansion-keyword').value.trim();
+            closeModal();
+            showLoaderModal();
+            try {
+                const worldSettingInstruction = worldSettings ? `[세계관 핵심 설정]:\n${worldSettings}\n\n` : "";
+                const context = storySummary ? `[지금까지의 요약]:\n${storySummary}` : `[이전 줄거리]:\n${storyLog.slice(0, index).join('\n')}`;
+                const keywordInstruction = keyword ? `\n\n[사용자 연출 키워드]: "${keyword}"\n이 키워드를 반드시 이야기에 반영해주세요.` : "";
+
+                let prompt;
+                if (expandedStories[index]) {
+                    prompt = `${worldSettingInstruction}${context}\n\n[기존 장면]:\n"${expandedStories[index]}"\n\n[요청]: 위 장면의 내용을 기반으로, 분량을 1.5배에서 2배로 늘려 훨씬 더 상세하고 풍부한 이야기로 만들어주세요.${keywordInstruction}`;
+                } else {
+                    prompt = `${worldSettingInstruction}${context}\n\n[대상 문장]:\n"${storyLog[index]}"\n\n[요청]: 위 문장을 한 편의 상세한 장면으로 만들어주세요.${keywordInstruction}`;
+                }
+                
+                const expandedText = await callGeminiAPI(prompt, { task: 'expansion' });
+                showExpansionEditor(index, expandedText);
+            } catch (error) {
+                showAlert(`오류 발생: ${error.message}`);
+            }
+        };
+
+        window.showExpansionEditor = (index, text) => {
+            const content = `<h3 class="text-xl font-bold mb-4 text-center">${index + 1}화 스토리 확장</h3><textarea id="expansion-textarea" class="w-full h-64 p-2 border rounded-md">${text}</textarea><div class="flex justify-center gap-4 mt-6"><button onclick="confirmExpansion(${index})" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg">선택</button><button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button></div>`;
+            showModal(content);
+        };
+        
+        window.confirmExpansion = async (index) => {
+            expandedStories[index] = document.getElementById('expansion-textarea').value;
+            updateStoryLog();
+            closeModal();
+            autoSave();
+
+            if (index === 0 && expandedStories[0]) {
+                generateFullPlotButton.classList.remove('hidden');
+            }
+        };
+
+        function autoSave(isInitialSave = false) {
+            if (!currentFilename) return;
+
+            let fullText = "양판소설 출판소 v.1 - 줄거리\ndesigned by 유성열\n\n================================\n\n";
+            fullText += `[전체 줄거리]\n${fullPlot || "- 전체 줄거리가 아직 정해지지 않았습니다. -"}\n\n================================\n\n`;
+            if (storySummary) { fullText += `[AI용 내용 요약본]\n${storySummary}\n\n================================\n\n`; }
+             if (Object.keys(logFoldStates).length > 0) {
+                fullText += `[UI 상태]\n${JSON.stringify(logFoldStates)}\n\n================================\n\n`;
+            }
+            if(worldSettings) {
+                fullText += `[세계관 설정]\n${worldSettings}\n\n================================\n\n`;
+            }
+            if (characters.length > 0) {
+                fullText += `[캐릭터 정보]\n${JSON.stringify(characters, null, 2)}\n\n================================\n\n`;
+            }
+
+            storyLog.forEach((entry, index) => {
+                fullText += `[${index + 1}화 요약]\n${entry}\n\n`;
+                if(logNotes[index]) {
+                    fullText += `[${index + 1}화 한 줄 요약]\n${logNotes[index]}\n\n`;
+                }
+                if(expandedStories[index]) {
+                    fullText += `[${index + 1}화 상세]\n${expandedStories[index]}\n\n--------------------------------\n\n`;
+                }
+            });
+            const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            if (isInitialSave) {
+                showAlert(`'${currentFilename}' 파일로 저장을 시작했습니다. 이제부터 작업 내용은 자동으로 저장됩니다.`);
+            }
+            console.log(`Auto-saved to ${currentFilename}`);
+        }
+        
+        saveSettingButton.addEventListener('click', () => {
+            worldSettings = worldSettingInput.value;
+            autoSave();
+            showAlert('세계관 설정이 적용 및 저장되었습니다.');
+        });
+
+        // --- 플롯 작성하기 워크플로우 ---
+        startPlotButton.addEventListener('click', () => {
+            const selectedOptions = {};
+            let hasSelection = false;
+            for (const key in setupOptions) {
+                const checked = document.querySelectorAll(`input[name="${key}"]:checked`);
+                if (checked.length > 0) {
+                    hasSelection = true;
+                }
+            }
+            if (!hasSelection) {
+                showAlert('하나 이상의 초기 설정을 선택해주세요!');
+                return;
+            }
+            promptInitialSave(true);
+        });
+
+        async function startPlottingWorkflow(initialSettingsText) {
+            plotQuestions = [];
+            plotAnswers = [];
+            currentQuestionIndex = 0;
+            showLoaderModal("AI가 플롯 구성을 위한 질문을 생성 중입니다...");
+
+            try {
+                const prompt = `[초기 설정]: ${initialSettingsText}\n\n[요청]: 위 설정을 바탕으로 매력적인 소설 플롯을 완성하기 위해 작가에게 물어봐야 할 가장 핵심적인 질문들을 10~15개 생성해주세요.`;
+                plotQuestions = await callGeminiAPI(prompt, { expectJson: true, task: 'plot_question_generation' });
+
+                if (!plotQuestions || plotQuestions.length === 0) {
+                    throw new Error("플롯 질문 생성에 실패했습니다.");
+                }
+                
+                displayNextPlotQuestion();
+            } catch(error) {
+                showAlert(`오류 발생: ${error.message}`);
+                closeModal();
+            }
+        }
+
+        function displayNextPlotQuestion() {
+            if (currentQuestionIndex < plotQuestions.length) {
+                const question = plotQuestions[currentQuestionIndex];
+                const content = `
+                    <h3 class="text-xl font-bold mb-2 text-center">AI 플롯 인터뷰</h3>
+                    <p class="text-center text-gray-500 mb-6">(${currentQuestionIndex + 1}/${plotQuestions.length})</p>
+                    <label for="plot-answer-input" class="font-semibold block mb-2">${question}</label>
+                    <textarea id="plot-answer-input" class="w-full p-2 border rounded-md" rows="5"></textarea>
+                    <div class="text-center mt-6">
+                        <button onclick="handlePlotAnswer()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-8 rounded-lg">다음</button>
+                    </div>
+                `;
+                showModal(content);
+            } else {
+                generatePlotOutlines();
+            }
+        }
+
+        function handlePlotAnswer() {
+            const answerInput = document.getElementById('plot-answer-input');
+            const answer = answerInput.value.trim();
+            if (!answer) {
+                showAlert("답변을 입력해주세요.");
+                return;
+            }
+            plotAnswers.push({ question: plotQuestions[currentQuestionIndex], answer: answer });
+            currentQuestionIndex++;
+            displayNextPlotQuestion();
+        }
+
+        async function generatePlotOutlines() {
+            showLoaderModal("답변을 바탕으로 전체 줄거리 초안 2~3개를 생성 중입니다...");
+            let fullInterview = plotAnswers.map(item => `Q: ${item.question}\nA: ${item.answer}`).join('\n\n');
+            const initialSettings = storyLog[0];
+            
+            try {
+                const prompt = `[초기 설정]:\n${initialSettings}\n\n[작가 인터뷰 내용]:\n${fullInterview}\n\n[요청]: 위 내용을 모두 종합하여, 이 모든 요소를 만족시키는 흥미로운 전체 줄거리(시놉시스)를 2~3가지 버전으로 창작해주세요.`;
+                tempPlotOutlines = await callGeminiAPI(prompt, { expectJson: true, task: 'plot_outline_generation' });
+
+                if (!tempPlotOutlines || tempPlotOutlines.length === 0) {
+                    throw new Error("줄거리 초안 생성에 실패했습니다.");
+                }
+                showPlotOutlineChoices(tempPlotOutlines);
+            } catch(error) {
+                showAlert(`오류 발생: ${error.message}`);
+                closeModal();
+            }
+        }
+        
+        function showPlotOutlineChoices(outlines) {
+            let choicesHtml = outlines.map((outline, index) => `
+                <div class="p-4 border rounded-lg bg-gray-50 mb-4">
+                     <div class="flex items-start">
+                        <input type="radio" name="plot-choice" id="plot-choice-${index}" value="${index}" class="mt-1.5 mr-3 h-4 w-4">
+                        <label for="plot-choice-${index}" class="flex-grow">
+                             <h4 class="font-bold">줄거리 제안 ${index + 1}</h4>
+                            <p class="text-sm text-gray-700 mt-2">${outline.substring(0, 300)}...</p>
+                        </label>
+                        <button onclick="viewFullOutline(${index})" class="ml-4 text-sm bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 flex-shrink-0">전체보기</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">AI가 제안하는 전체 줄거리</h3>
+                <p class="text-center text-gray-600 mb-6">마음에 드는 줄거리를 선택하고 채택해주세요.</p>
+                <div>${choicesHtml}</div>
+                <div class="flex justify-center gap-4 mt-6">
+                    <button onclick="finalizePlotSelection()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">줄거리 채택하기</button>
+                    <button onclick="regeneratePlotOutlines()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-lg">줄거리 다시 생성하기</button>
+                    <button onclick="closeModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        window.viewFullOutline = (index) => {
+            const outline = tempPlotOutlines[index];
+            const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">줄거리 제안 ${index + 1} 전체 내용</h3>
+                <div class="whitespace-pre-wrap p-4 bg-gray-100 border rounded-md h-96 overflow-y-auto">${outline}</div>
+                <div class="text-center mt-6">
+                     <button onclick="showPlotOutlineChoices(tempPlotOutlines)" class="bg-gray-500 text-white py-2 px-6 rounded-lg">뒤로 가기</button>
+                </div>
+            `;
+            showModal(content);
+        };
+
+        window.regeneratePlotOutlines = () => {
+            generatePlotOutlines();
+        };
+
+        async function finalizePlotSelection() {
+            const selectedRadio = document.querySelector('input[name="plot-choice"]:checked');
+            if (!selectedRadio) {
+                showAlert("채택할 줄거리를 선택해주세요.");
+                return;
+            }
+            const selectedIndex = parseInt(selectedRadio.value, 10);
+            fullPlot = tempPlotOutlines[selectedIndex];
+            
+            showLoaderModal("선택된 줄거리를 기반으로 전체 화의 요약을 생성 중입니다...");
+
+            try {
+                const prompt = `[전체 줄거리]:\n${fullPlot}\n\n[요청]: 위 줄거리를 바탕으로, 약 50~100화 분량의 웹소설로 만들기 위한 각 화의 '한 줄 요약' 목록을 생성해주세요.`;
+                const chapterSummaries = await callGeminiAPI(prompt, { expectJson: true, task: 'chapter_summary_generation' });
+
+                if (!chapterSummaries || chapterSummaries.length === 0) {
+                    throw new Error("화별 요약 생성에 실패했습니다.");
+                }
+
+                storyLog.push(...chapterSummaries);
+                
+                mainNav.classList.remove('hidden');
+                showView('story-screen');
+                updateStoryLog();
+                generateFullPlotButton.classList.remove('hidden');
+                generateChapterButton.disabled = false;
+                autoSave();
+                closeModal();
+                showAlert("플롯 작성이 완료되었습니다! 전체 줄거리와 각 화의 요약이 자동으로 생성되었습니다.");
+
+            } catch (error) {
+                showAlert(`오류 발생: ${error.message}`);
+                closeModal();
+            }
+        }
+
+
+        // --- 캐릭터 관련 함수들 ---
+        addCharacterChoiceButton.addEventListener('click', () => {
+             const content = `
+                <h3 class="text-xl font-bold mb-4 text-center">새 캐릭터 추가 방식 선택</h3>
+                <p class="text-center text-gray-600 mb-6">어떻게 캐릭터를 추가하시겠습니까?</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="showAddCharacterModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full">사용자 직접 입력</button>
+                    <button onclick="generateCharactersWithAI()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg w-full">AI로 자동 생성</button>
+                </div>
+            `;
+            showModal(content);
+        });
+
+        async function generateCharactersWithAI() {
+            closeModal();
+            showLoaderModal();
+            try {
+                const existingNames = characters.map(c => c.profile.이름);
+                const worldSettingInstruction = worldSettings ? `[세계관 핵심 설정]:\n${worldSettings}\n\n` : "";
+                let context = `[전체 줄거리]:\n${fullPlot || "아직 없음"}\n\n[최신 화]:\n${storyLog.slice(-5).join('\n')}\n\n[현재 등록된 캐릭터]: ${existingNames.join(', ')}`;
+                const prompt = `${worldSettingInstruction}${context}\n\n[요청]: 위 스토리 내용에서 중요해 보이지만 아직 등록되지 않은 캐릭터를 최대 3명 찾아내 프로필을 생성해줘.`;
+                const generatedChars = await callGeminiAPI(prompt, { expectJson: true, task: 'character_generation'});
+                
+                if (!generatedChars || generatedChars.length === 0) {
+                    showAlert("스토리에서 자동으로 생성할 만한 새 캐릭터를 찾지 못했습니다.");
+                } else {
+                    tempAICharacters = generatedChars;
+                    showAICharacterSuggestions(generatedChars);
+                }
+            } catch (error) {
+                 showAlert(`오류 발생: ${error.message}`);
+            } finally {
+                if(!tempAICharacters || tempAICharacters.length === 0) closeModal();
+            }
+        }
+
+        function showAICharacterSuggestions(generatedChars) {
+            let suggestionsHtml = generatedChars.map((char, index) => {
+                return `
+                    <div class="p-4 border rounded-lg bg-gray-50 mb-4">
+                        <h4 class="font-bold text-lg">${char.profile.이름}</h4>
+                        <p class="text-sm"><strong class="font-semibold">성별/종족:</strong> ${char.profile['성별/종족']}</p>
+                        <p class="text-sm"><strong class="font-semibold">외모:</strong> ${char.profile.외모}</p>
+                        <p class="text-sm"><strong class="font-semibold">설정:</strong> ${char.profile.설정}</p>
+                        <div class="text-right mt-2">
+                            <button onclick="addAICharacter(${index})" class="text-sm bg-green-600 text-white px-3 py-1 rounded">이 캐릭터 추가</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+             const content = `
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">AI가 탐색한 캐릭터 프로필</h3>
+                    <button onclick="addAllAICharacters()" class="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded-lg">캐릭터 전체 추가</button>
+                </div>
+                <p class="text-center text-gray-600 mb-6">스토리 내용을 기반으로 AI가 찾은 캐릭터들입니다. 추가하고 싶은 캐릭터를 선택하세요.</p>
+                <div>${suggestionsHtml}</div>
+                <div class="text-center mt-6">
+                    <button onclick="closeModal()" class="bg-gray-500 text-white py-2 px-6 rounded-lg">닫기</button>
+                </div>
+            `;
+            showModal(content);
+        }
+        
+        window.addAllAICharacters = () => {
+            if (tempAICharacters.length === 0) {
+                showAlert("추가할 캐릭터가 없습니다.");
+                return;
+            }
+
+            tempAICharacters.forEach(char => {
+                char.statusHistory = [];
+                characters.push(char);
+            });
+
+            const addedCount = tempAICharacters.length;
+            tempAICharacters = [];
+
+            closeModal();
+            renderCharacterScreen();
+            autoSave();
+            showAlert(`${addedCount}명의 캐릭터가 전체 추가되었습니다.`);
+        };
+
+        window.addAICharacter = (index) => {
+            const newChar = tempAICharacters[index];
+            newChar.statusHistory = [];
+            characters.push(newChar);
+            
+            tempAICharacters.splice(index, 1);
+            if (tempAICharacters.length > 0) {
+                showAICharacterSuggestions(tempAICharacters);
+            } else {
+                closeModal();
+            }
+            
+            renderCharacterScreen();
+            autoSave();
+            showAlert(`'${newChar.profile.이름}' 캐릭터가 추가되었습니다.`);
+        };
+
+
+        function renderCharacterScreen() {
+            characterListDiv.innerHTML = '';
+            if (characters.length === 0) {
+                characterListDiv.innerHTML = `<p class="text-center text-gray-500">아직 추가된 캐릭터가 없습니다. '새 캐릭터 추가' 버튼을 눌러 첫 캐릭터를 만들어보세요.</p>`;
+                return;
+            }
+
+            characters.forEach((char, index) => {
+                const card = document.createElement('div');
+                card.className = 'p-4 border rounded-lg bg-gray-50';
+                
+                let profileHtml = '';
+                for(const key in char.profile) {
+                    profileHtml += `<p class="text-sm"><strong class="font-semibold">${key}:</strong> ${char.profile[key]}</p>`;
+                }
+
+                let historyHtml = (char.statusHistory || []).map((hist, hIndex) => `
+                    <div class="mt-2 p-2 border-t">
+                        <p class="font-semibold">${hist.chapter} 시점</p>
+                        <p class="text-sm whitespace-pre-wrap">${hist.status}</p>
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-bold">${char.profile.이름 || '이름 없음'}</h3>
+                        <div>
+                            <button onclick="showAddStatusModal(${index})" class="text-sm bg-blue-500 text-white px-2 py-1 rounded">상태 추가</button>
+                            <button onclick="showEditProfileModal(${index})" class="text-sm bg-gray-500 text-white px-2 py-1 rounded">수정</button>
+                            <button onclick="deleteCharacter(${index})" class="text-sm bg-red-500 text-white px-2 py-1 rounded">삭제</button>
+                        </div>
+                    </div>
+                    <div class="text-gray-700">${profileHtml}</div>
+                    <div class="mt-4 bg-white p-2 rounded">${historyHtml || '<p class="text-sm text-gray-400">기록된 시점별 상태가 없습니다.</p>'}</div>
+                `;
+                characterListDiv.appendChild(card);
+            });
+        }
+
+        function showAddCharacterModal() {
+            closeModal(); // Close choice modal first
+            const content = `
+                <h3 class="text-xl font-bold mb-4">새 캐릭터 프로필 (직접 입력)</h3>
+                <div class="space-y-2">
+                    <input id="char-name" class="w-full p-2 border rounded" placeholder="이름">
+                    <input id="char-gender" class="w-full p-2 border rounded" placeholder="성별 / 종족">
+                    <input id="char-appearance" class="w-full p-2 border rounded" placeholder="외모 (키, 몸무게, 머리색 등)">
+                    <textarea id="char-setting" class="w-full p-2 border rounded" rows="4" placeholder="캐릭터 설정 (성격, 배경, 주요 특징 등)"></textarea>
+                </div>
+                <div class="mt-6 flex justify-center gap-4">
+                    <button onclick="addCharacter()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">추가</button>
+                    <button onclick="closeModal()" class="bg-gray-500 text-white py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
+        
+        function showEditProfileModal(charIndex) {
+            const char = characters[charIndex];
+            const content = `
+                <h3 class="text-xl font-bold mb-4">캐릭터 프로필 수정</h3>
+                <div class="space-y-2">
+                    <input id="char-name-edit" class="w-full p-2 border rounded" value="${char.profile.이름 || ''}">
+                    <input id="char-gender-edit" class="w-full p-2 border rounded" value="${char.profile['성별/종족'] || ''}">
+                    <input id="char-appearance-edit" class="w-full p-2 border rounded" value="${char.profile.외모 || ''}">
+                    <textarea id="char-setting-edit" class="w-full p-2 border rounded" rows="4">${char.profile.설정 || ''}</textarea>
+                </div>
+                <div class="mt-6 flex justify-center gap-4">
+                    <button onclick="saveCharacterProfile(${charIndex})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">저장</button>
+                    <button onclick="closeModal()" class="bg-gray-500 text-white py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        function saveCharacterProfile(charIndex) {
+             characters[charIndex].profile = {
+                이름: document.getElementById('char-name-edit').value,
+                "성별/종족": document.getElementById('char-gender-edit').value,
+                외모: document.getElementById('char-appearance-edit').value,
+                설정: document.getElementById('char-setting-edit').value,
+            };
+            closeModal();
+            renderCharacterScreen();
+            autoSave();
+        }
+
+
+        function addCharacter() {
+            const newChar = {
+                profile: {
+                    이름: document.getElementById('char-name').value,
+                    "성별/종족": document.getElementById('char-gender').value,
+                    외모: document.getElementById('char-appearance').value,
+                    설정: document.getElementById('char-setting').value,
+                },
+                statusHistory: []
+            };
+            characters.push(newChar);
+            closeModal();
+            renderCharacterScreen();
+            autoSave();
+        }
+
+        function showAddStatusModal(charIndex) {
+            const content = `
+                <h3 class="text-xl font-bold mb-4">${characters[charIndex].profile.이름} - 시점별 상태 추가</h3>
+                <div class="space-y-2">
+                    <input id="status-chapter" class="w-full p-2 border rounded" placeholder="화 (시점) (예: 10화, 20화)">
+                    <textarea id="status-details" class="w-full p-2 border rounded" rows="6" placeholder="해당 시점의 능력치, 스킬, 아이템, 심리상태 등"></textarea>
+                </div>
+                <div class="mt-6 flex justify-center gap-4">
+                    <button onclick="addStatus(${charIndex})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">추가</button>
+                    <button onclick="closeModal()" class="bg-gray-500 text-white py-2 px-6 rounded-lg">취소</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        function addStatus(charIndex) {
+            const newStatus = {
+                chapter: document.getElementById('status-chapter').value || `${storyLog.length}화`,
+                status: document.getElementById('status-details').value
+            };
+            if(!characters[charIndex].statusHistory) characters[charIndex].statusHistory = [];
+            characters[charIndex].statusHistory.push(newStatus);
+            characters[charIndex].statusHistory.sort((a, b) => (parseInt(a.chapter) || 0) - (parseInt(b.chapter) || 0));
+            closeModal();
+            renderCharacterScreen();
+            autoSave();
+        }
+
+        function deleteCharacter(charIndex) {
+            if (confirm(`'${characters[charIndex].profile.이름}' 캐릭터를 정말로 삭제하시겠습니까?`)) {
+                characters.splice(charIndex, 1);
+                renderCharacterScreen();
+                autoSave();
+            }
+        }
+
+        renderSetupOptions();
+    </script>
+</body>
+</html>
+
